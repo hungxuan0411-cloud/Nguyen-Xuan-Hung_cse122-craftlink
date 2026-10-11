@@ -28,7 +28,7 @@ Cho phép người mua xem danh sách sản phẩm và tương tác với giao d
 - Bổ sung các chức năng JavaScript sau khi hoàn thiện.
 
 ## Thiết kế Figma
-Chưa bổ sung liên kết.
+https://www.canva.com/design/DAHWyBVvS6U/eyYrsvv49jN-26FeiXk-Aw/edit
 
 ## Video trình bày
 Chưa bổ sung liên kết.

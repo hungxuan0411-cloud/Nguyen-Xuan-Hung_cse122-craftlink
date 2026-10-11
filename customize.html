@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo brief thiết kế cùng AI | CraftLink</title>
+  <meta name="description" content="Mô tả ý tưởng của bạn, để AI gợi ý brief thiết kế đầy đủ và tối ưu trước khi gửi tới nghệ nhân CraftLink.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/customize.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+
+      <a href="index.html" class="brand">CraftLink</a>
+
+      <nav class="main-nav" aria-label="Điều hướng chính">
+        <ul>
+          <li><a href="index.html">Khám phá</a></li>
+          <li><a href="index.html">Danh mục</a></li>
+          <li><a href="artisan-suggestions.html">Nghệ nhân</a></li>
+          <li><a href="favorites.html">Yêu thích</a></li>
+          <li><a href="orders.html">Đơn hàng</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <a href="index.html" class="icon-btn" aria-label="Tìm kiếm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </a>
+        <button type="button" class="icon-btn" aria-label="Tin nhắn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <a href="cart.html" class="icon-btn" aria-label="Giỏ hàng">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </a>
+        <button type="button" class="icon-btn" aria-label="Tài khoản">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="container">
+
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="index.html">Trang chủ</a></li>
+        <li><span aria-current="page">Tạo brief thiết kế cùng AI</span></li>
+      </ol>
+    </nav>
+
+    <section class="page-heading" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Tạo brief thiết kế cùng AI</h1>
+        <p class="page-subtitle">Mô tả ý tưởng, để AI gợi ý brief đầy đủ và tối ưu cho bạn.</p>
+      </div>
+    </section>
+
+    <div class="customize-layout">
+
+      <section class="panel customize-input-panel" aria-label="Nhập yêu cầu tùy biến">
+        <form id="brief-form">
+
+          <div class="field-group">
+            <h2 class="panel-title">Mô tả yêu cầu của bạn</h2>
+            <label class="visually-hidden" for="brief-description">Mô tả yêu cầu của bạn</label>
+            <textarea id="brief-description" name="description" rows="7" maxlength="1000" placeholder="Nhập mô tả yêu cầu, ngân sách, hạn giao, mục đích sử dụng..."></textarea>
+            <p class="char-count"><span id="char-count">0</span>/1000</p>
+          </div>
+
+          <div class="field-group">
+            <h2 class="panel-title">Ảnh tham khảo (tùy chọn)</h2>
+            <div class="upload-box">
+              <p>Kéo thả ảnh vào đây hoặc chọn file</p>
+              <label class="visually-hidden" for="reference-image">Ảnh tham khảo</label>
+              <input type="file" id="reference-image" name="reference-image" accept="image/*">
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary btn-large" id="ai-brief-btn">AI Brief Builder</button>
+          <p class="form-note" id="brief-note">Vui lòng nhập mô tả yêu cầu trước khi tạo brief.</p>
+
+        </form>
+      </section>
+
+      <section class="panel customize-result-panel" aria-label="Kết quả brief đề xuất bởi AI">
+
+        <p class="ai-status" id="ai-status">
+          <span class="spinner" aria-hidden="true"></span>
+          AI đang phân tích yêu cầu, vui lòng chờ trong giây lát...
+        </p>
+
+        <h2 class="panel-title">Kết quả brief đề xuất bởi AI</h2>
+        <dl class="info-list brief-result" id="brief-result">
+          <dt>Mục tiêu</dt>
+          <dd>Tạo bộ cốc gốm men lá nâu, phù hợp sử dụng hàng ngày và làm quà tặng.</dd>
+          <dt>Chất liệu</dt>
+          <dd>Gốm sứ cao cấp, men mờ an toàn cho đồ uống nóng.</dd>
+          <dt>Kích thước</dt>
+          <dd>Đường kính 8 – 9 cm, cao 9 – 10 cm, dung tích ~300ml.</dd>
+          <dt>Phong cách</dt>
+          <dd>Tối giản, mộc mạc, họa tiết lá nâu — tông màu tự nhiên.</dd>
+          <dt>Ngân sách dự kiến</dt>
+          <dd class="brief-budget">220.000 – 260.000 ₫ / sản phẩm</dd>
+        </dl>
+
+        <h2 class="brief-section-title">Vì sao AI đề xuất như vậy?</h2>
+        <p class="ai-explain">Dựa trên mô tả của bạn, AI tối ưu chất liệu an toàn, kích thước tiện dụng, phong cách phù hợp xu hướng quà tặng và ngân sách phổ biến hiện nay.</p>
+
+        <div class="btn-row brief-actions">
+          <a href="artisan-suggestions.html" class="btn-success" id="accept-brief-btn">Chấp nhận</a>
+          <button type="button" class="btn-outline" id="edit-brief-btn">Sửa</button>
+          <button type="button" class="btn-outline" id="reject-brief-btn">Từ chối</button>
+          <button type="button" class="btn-outline" id="regenerate-brief-btn">Tạo lại</button>
+          <button type="button" class="btn-outline" id="save-brief-btn">Lưu</button>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-top">
+      <div class="footer-brand">
+        <p class="footer-logo">CraftLink</p>
+        <p class="footer-tagline">Sàn sản phẩm sáng tạo tùy biến — kết nối người yêu thủ công với các nghệ nhân trên cả nước.</p>
+      </div>
+
+      <nav class="footer-nav" aria-label="Liên kết chân trang — Khám phá">
+        <h2>Khám phá</h2>
+        <ul>
+          <li><a href="index.html">Danh mục sản phẩm</a></li>
+          <li><a href="artisan-suggestions.html">Nghệ nhân</a></li>
+          <li><a href="favorites.html">Yêu thích</a></li>
+          <li><a href="orders.html">Đơn hàng</a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-nav" aria-label="Liên kết chân trang — Hỗ trợ">
+        <h2>Hỗ trợ</h2>
+        <ul>
+          <li><a href="#">Trung tâm trợ giúp</a></li>
+          <li><a href="#">Chính sách đổi trả</a></li>
+          <li><a href="#">Điều khoản sử dụng</a></li>
+          <li><a href="#">Liên hệ</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container">
+        <p>© 2026 CraftLink — Sàn sản phẩm sáng tạo tùy biến.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

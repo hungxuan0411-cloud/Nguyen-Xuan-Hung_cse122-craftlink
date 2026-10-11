@@ -1,0 +1,158 @@
+/* ==========================================================================
+   CraftLink — Trang Gợi ý nghệ nhân từ AI
+   Bố cục 2 cột: giới thiệu bên trái | danh sách thẻ nghệ nhân bên phải
+   ========================================================================== */
+
+.suggestions-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 40px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+
+/* ---------- Cột trái: phần giới thiệu ---------- */
+
+.hero-eyebrow {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.suggestions-hero h1 {
+  margin: 0 0 12px;
+  font-size: 32px;
+  line-height: 1.25;
+}
+
+.hero-text {
+  margin: 0;
+  max-width: 380px;
+  font-size: 15px;
+  color: var(--color-text-muted);
+}
+
+
+/* ---------- Cột phải: danh sách thẻ nghệ nhân ---------- */
+
+.artisan-list ul {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.artisan-suggestion-card {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.artisan-photo {
+  width: 110px;
+  height: 110px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.artisan-name-lg {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.artisan-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #5f564c;
+}
+
+.artisan-card-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.match-score {
+  margin: 0;
+  text-align: right;
+}
+
+.match-percent {
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-primary);
+}
+
+.match-label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+/* Ba nút của mỗi thẻ xếp thành cột bên phải */
+.artisan-card-actions {
+  flex-direction: column;
+}
+
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+/* Máy tính bảng: phần giới thiệu lên trên, danh sách xuống dưới */
+@media (max-width: 960px) {
+  .suggestions-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .hero-text {
+    max-width: none;
+  }
+}
+
+/* Điện thoại: ảnh nhỏ lại, điểm phù hợp + nút chuyển xuống hàng riêng */
+@media (max-width: 720px) {
+  .artisan-suggestion-card {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .artisan-photo {
+    width: 84px;
+    height: 84px;
+  }
+
+  .artisan-card-side {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .artisan-card-actions {
+    flex-direction: row;
+  }
+}
+
+/* Điện thoại nhỏ */
+@media (max-width: 540px) {
+  .suggestions-hero h1 {
+    font-size: 26px;
+  }
+}

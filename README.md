@@ -33,12 +33,19 @@ Cho phép người mua xem danh sách sản phẩm thủ công, tùy biến yêu
 ```
 
 ## Chức năng chính
-- Danh sách sản phẩm: tìm kiếm (không phân biệt hoa/thường, gõ không dấu vẫn khớp), lọc theo danh mục – phong cách – thời gian làm – khoảng giá, sắp xếp theo giá và đánh giá. Đã hoạt động bằng JavaScript thuần.
-- Giỏ hàng và yêu thích: lưu cục bộ bằng localStorage (đang hoàn thiện theo từng giai đoạn).
+- **Trang chính — Danh sách sản phẩm (index.html):** tìm kiếm không dấu, lọc theo danh mục – phong cách – thời gian làm – khoảng giá, sắp xếp theo giá/đánh giá, xóa bộ lọc, đếm số kết quả và trạng thái rỗng.
+- **Giỏ hàng:** thêm sản phẩm, tăng/giảm số lượng, xóa, tính tổng tiền — lưu bằng localStorage.
+- **Yêu thích:** bật/tắt trái tim ở trang chi tiết, trang danh sách yêu thích.
+- **Tạo brief:** đếm ký tự, kiểm tra dữ liệu nhập, mô phỏng AI phân tích, lưu nháp.
+- **Đơn hàng:** chuyển tab trạng thái, tìm kiếm, lọc thời gian, hủy đơn (mô phỏng trên trình duyệt).
+- **Gợi ý nghệ nhân & chi tiết đơn:** bỏ qua / tạo lại gợi ý, lưu nháp yêu cầu chỉnh sửa.
 - Luồng người mua qua 8 trang: xem sản phẩm → tạo brief tùy biến → chọn nghệ nhân → đặt hàng → theo dõi đơn.
 
 ## Thiết kế Canva
 https://www.canva.com/design/DAHWyBVvS6U/eyYrsvv49jN-26FeiXk-Aw/edit
+
+## GitHub
+https://github.com/hungxuan0411-cloud/Nguyen-Xuan-Hung_cse122-craftlink
 
 ## Video trình bày
 Chưa bổ sung liên kết.

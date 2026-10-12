@@ -739,7 +739,8 @@ function initProductGallery() {
 // ở đây chỉ là mô phỏng bằng setTimeout cho sinh động khi thuyết trình.
 function initCustomizePage() {
   const form = document.getElementById("brief-form");
-  if (!form) {
+  const resultPanel = document.querySelector(".customize-result-panel");
+  if (!form || !resultPanel) {
     return; // trang này không phải trang tạo brief
   }
 
@@ -753,7 +754,9 @@ function initCustomizePage() {
   const regenerateBtn = document.getElementById("regenerate-brief-btn");
   const saveBtn = document.getElementById("save-brief-btn");
 
-  // Các khối giao diện của "kết quả AI" — ẩn/hiện cùng nhau
+  // Các khối nội dung của "kết quả AI" — ẩn/hiện cùng nhau.
+  // Cả khung kết quả bên phải cũng chỉ xuất hiện khi AI đã "phân tích" xong,
+  // nên lúc mới mở trang không có khung rỗng.
   const resultParts = [
     document.getElementById("brief-result"),
     document.querySelector(".brief-section-title"),
@@ -769,10 +772,11 @@ function initCustomizePage() {
     });
   }
 
-  // Trạng thái ban đầu: chưa có kết quả, chưa hiện cảnh báo
+  // Trạng thái ban đầu: chưa có kết quả nên ẩn cả khung bên phải,
+  // chưa hiện cảnh báo nhập liệu.
   status.hidden = true;
   note.hidden = true;
-  setResultVisible(false);
+  resultPanel.hidden = true;
 
   // Đếm ký tự đang gõ để người dùng biết còn bao nhiêu chỗ (maxlength 1000)
   description.addEventListener("input", function () {
@@ -789,6 +793,7 @@ function initCustomizePage() {
     }
     analyzing = true;
 
+    resultPanel.hidden = false; // khung kết quả xuất hiện cùng trạng thái chờ
     setResultVisible(false);
     note.hidden = true;
     status.hidden = false; // hiện "AI đang phân tích..."
@@ -823,10 +828,11 @@ function initCustomizePage() {
     });
   }
 
-  // "Từ chối": ẩn khối kết quả, người dùng có thể tạo lại
+  // "Từ chối": ẩn cả khung kết quả (về trạng thái chưa có kết quả),
+  // người dùng có thể bấm "AI Brief Builder" để tạo lại
   if (rejectBtn) {
     rejectBtn.addEventListener("click", function () {
-      setResultVisible(false);
+      resultPanel.hidden = true;
       showToast("Đã từ chối brief đề xuất. Bạn có thể tạo lại bất cứ lúc nào.");
     });
   }

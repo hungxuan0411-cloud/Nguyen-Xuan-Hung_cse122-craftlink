@@ -18,6 +18,14 @@
    Giai đoạn 4 (yêu thích):
      9. Nút trái tim ở trang chi tiết + trang danh sách yêu thích
 
+   Giai đoạn 5 (các tương tác còn lại):
+    10. Trang chi tiết: bấm ảnh nhỏ để đổi ảnh lớn trong thư viện
+    11. Trang tạo brief: đếm ký tự + mô phỏng AI phân tích + lưu nháp
+    12. Trang đơn hàng: tab trạng thái, tìm kiếm, lọc thời gian, hủy đơn
+    13. Trang chi tiết đơn: lưu nháp yêu cầu chỉnh sửa
+    14. Trang gợi ý nghệ nhân: bỏ qua / tạo lại gợi ý
+    15. Phản hồi trung thực cho các nút chưa có trong bản demo
+
    File này được nhúng ở cuối <body> của cả 8 trang (sau data.js).
    Mọi thao tác với phần tử đều KIỂM TRA PHẦN TỬ CÓ TỒN TẠI trước,
    vì mỗi trang chỉ chứa một phần các thành phần giao diện.
@@ -28,6 +36,12 @@
 // Khóa lưu dữ liệu trong localStorage (đặt tiền tố "craftlink_" để tránh trùng)
 const CART_KEY = "craftlink_cart";
 const FAVORITES_KEY = "craftlink_favorites";
+
+// Khóa lưu BẢN NHÁP do người dùng tạo (brief ở trang tùy biến,
+// yêu cầu chỉnh sửa ở trang chi tiết đơn). Đây là dữ liệu của RIÊNG
+// trình duyệt này — dự án chưa có máy chủ để gửi đi cho nghệ nhân.
+const BRIEF_DRAFT_KEY = "craftlink_brief_draft";
+const REVISION_DRAFT_KEY = "craftlink_revision_draft";
 
 // Số lượng tối đa cho một sản phẩm trong giỏ
 const MAX_QTY = 99;
@@ -686,14 +700,387 @@ function initFavoritesPage() {
   renderFavorites(); // vẽ danh sách ngay khi mở trang
 }
 
-/* ---------- 10. Khởi động ---------- */
+/* ---------- 10. Thư viện ảnh ở trang chi tiết sản phẩm ---------- */
+
+// Bấm vào ảnh nhỏ trong #gallery-thumbs thì ảnh lớn #gallery-main-img
+// đổi theo ảnh nhỏ đó. Ảnh lấy từ chính thẻ <img> bên trong nút,
+// không cần thêm dữ liệu gì trong HTML.
+function initProductGallery() {
+  const mainImg = document.getElementById("gallery-main-img");
+  const thumbs = document.getElementById("gallery-thumbs");
+  if (!mainImg || !thumbs) {
+    return; // trang này không phải chi tiết sản phẩm
+  }
+
+  const buttons = Array.from(thumbs.querySelectorAll(".thumb-btn"));
+
+  // Ủy quyền sự kiện: một listener cho cả dãy ảnh nhỏ
+  thumbs.addEventListener("click", function (event) {
+    const button = event.target.closest(".thumb-btn");
+    if (!button) {
+      return;
+    }
+
+    const thumbImg = button.querySelector("img");
+    mainImg.src = thumbImg.src;
+    mainImg.alt = "Ảnh sản phẩm " + (buttons.indexOf(button) + 1);
+
+    // Đánh dấu ảnh nhỏ đang được chọn (CSS tô viền)
+    buttons.forEach(function (item) {
+      item.classList.toggle("active", item === button);
+    });
+  });
+}
+
+/* ---------- 11. Trang tạo brief (customize.html) ---------- */
+
+// Bàn giao diện AI tạo brief cho sản phẩm tùy biến.
+// LƯU Ý trung thực: dự án chưa có máy chủ AI thật, nên phần "phân tích"
+// ở đây chỉ là mô phỏng bằng setTimeout cho sinh động khi thuyết trình.
+function initCustomizePage() {
+  const form = document.getElementById("brief-form");
+  if (!form) {
+    return; // trang này không phải trang tạo brief
+  }
+
+  const description = document.getElementById("brief-description");
+  const charCount = document.getElementById("char-count");
+  const note = document.getElementById("brief-note");
+  const status = document.getElementById("ai-status");
+  const submitBtn = document.getElementById("ai-brief-btn");
+  const editBtn = document.getElementById("edit-brief-btn");
+  const rejectBtn = document.getElementById("reject-brief-btn");
+  const regenerateBtn = document.getElementById("regenerate-brief-btn");
+  const saveBtn = document.getElementById("save-brief-btn");
+
+  // Các khối giao diện của "kết quả AI" — ẩn/hiện cùng nhau
+  const resultParts = [
+    document.getElementById("brief-result"),
+    document.querySelector(".brief-section-title"),
+    document.querySelector(".ai-explain"),
+    document.querySelector(".brief-actions")
+  ].filter(function (part) {
+    return part !== null; // chỉ giữ phần tử thực sự có trên trang
+  });
+
+  function setResultVisible(visible) {
+    resultParts.forEach(function (part) {
+      part.hidden = !visible;
+    });
+  }
+
+  // Trạng thái ban đầu: chưa có kết quả, chưa hiện cảnh báo
+  status.hidden = true;
+  note.hidden = true;
+  setResultVisible(false);
+
+  // Đếm ký tự đang gõ để người dùng biết còn bao nhiêu chỗ (maxlength 1000)
+  description.addEventListener("input", function () {
+    charCount.textContent = description.value.length;
+  });
+
+  let analyzing = false; // chặn bấm chồng khi đang "phân tích"
+
+  // Mô phỏng quá trình AI phân tích: hiện trạng thái chờ ~1,2 giây
+  // rồi hiện lại khối kết quả và báo xong.
+  function runAnalysis(doneMessage) {
+    if (analyzing) {
+      return;
+    }
+    analyzing = true;
+
+    setResultVisible(false);
+    note.hidden = true;
+    status.hidden = false; // hiện "AI đang phân tích..."
+    submitBtn.disabled = true;
+
+    setTimeout(function () {
+      analyzing = false;
+      submitBtn.disabled = false;
+      status.hidden = true;
+      setResultVisible(true); // hiện kết quả brief
+      showToast(doneMessage);
+    }, 1200);
+  }
+
+  // Gửi form: kiểm tra còn trống thì nhắc, hợp lệ thì chạy mô phỏng
+  form.addEventListener("submit", function (event) {
+    event.preventDefault(); // chặn tải lại trang
+
+    if (description.value.trim() === "") {
+      note.hidden = false; // hiện dòng nhắc màu đỏ có sẵn trong HTML
+      description.focus();
+      return;
+    }
+
+    runAnalysis("AI đã tạo brief đề xuất cho bạn.");
+  });
+
+  // "Chỉnh sửa": đưa con trỏ về ô mô tả để gõ lại
+  if (editBtn) {
+    editBtn.addEventListener("click", function () {
+      description.focus();
+    });
+  }
+
+  // "Từ chối": ẩn khối kết quả, người dùng có thể tạo lại
+  if (rejectBtn) {
+    rejectBtn.addEventListener("click", function () {
+      setResultVisible(false);
+      showToast("Đã từ chối brief đề xuất. Bạn có thể tạo lại bất cứ lúc nào.");
+    });
+  }
+
+  // "Tạo lại": chạy mô phỏng phân tích thêm một lần nữa
+  if (regenerateBtn) {
+    regenerateBtn.addEventListener("click", function () {
+      runAnalysis("Đã tạo lại brief đề xuất (mô phỏng).");
+    });
+  }
+
+  // "Lưu brief": lưu bản nháp vào trình duyệt — KHÔNG gửi đến máy chủ
+  if (saveBtn) {
+    saveBtn.addEventListener("click", function () {
+      writeJson(BRIEF_DRAFT_KEY, { description: description.value });
+      showToast("Đã lưu brief trên trình duyệt này (bản demo chưa gửi đến máy chủ).");
+    });
+  }
+}
+
+/* ---------- 12. Trang đơn hàng (orders.html) ---------- */
+
+// Lọc bảng đơn hàng theo tab trạng thái, từ khóa và khoảng thời gian.
+// Mỗi dòng <tr> mang sẵn data-status và data-date để việc lọc chỉ là
+// so sánh thuộc tính — không cần đọc nội dung ô.
+function initOrdersPage() {
+  const tbody = document.getElementById("orders-table-body");
+  if (!tbody) {
+    return; // trang này không phải danh sách đơn hàng
+  }
+
+  const tabs = document.getElementById("order-tabs");
+  const searchInput = document.getElementById("order-search");
+  const timeFilter = document.getElementById("order-time-filter");
+  const tableScroll = document.querySelector(".table-scroll");
+  const emptyState = document.getElementById("orders-empty");
+
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+  let currentStatus = "all"; // tab đang chọn
+
+  // Một đơn có khớp với TẤT CẢ điều kiện đang lọc hay không
+  function orderMatches(row) {
+    // 1. Trạng thái: tab "all" thì bỏ qua điều kiện này
+    if (currentStatus !== "all" && row.dataset.status !== currentStatus) {
+      return false;
+    }
+
+    // 2. Từ khóa: tìm theo mã đơn và tên nghệ nhân (gõ không dấu vẫn được)
+    const keyword = normalizeText(searchInput.value);
+    if (keyword !== "") {
+      const code = row.querySelector(".order-code").textContent;
+      const artisan = row.querySelector(".order-artisan span").textContent;
+      if (!normalizeText(code + " " + artisan).includes(keyword)) {
+        return false;
+      }
+    }
+
+    // 3. Thời gian: so ngày đặt đơn với mốc hiện tại.
+    // Lưu ý: dữ liệu mẫu là đơn của năm 2025 nên khi lọc 7/30 ngày
+    // gần đây sẽ không có kết quả — đây là hành vi đúng của bộ lọc.
+    const range = timeFilter.value;
+    if (range !== "all") {
+      const days = range === "last-7-days" ? 7 : 30;
+      const limit = Date.now() - days * 24 * 60 * 60 * 1000;
+      if (new Date(row.dataset.date).getTime() < limit) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Hàm trung tâm: áp mọi điều kiện rồi cập nhật hiển thị
+  function applyOrderFilters() {
+    let visibleCount = 0;
+    rows.forEach(function (row) {
+      const show = orderMatches(row);
+      row.hidden = !show;
+      if (show) {
+        visibleCount += 1;
+      }
+    });
+
+    // Không còn đơn nào khớp: ẩn bảng, hiện lời nhắn thay thế
+    tableScroll.hidden = visibleCount === 0;
+    emptyState.hidden = visibleCount > 0;
+  }
+
+  // Bấm tab: đổi tab đang chọn rồi lọc lại
+  if (tabs) {
+    tabs.addEventListener("click", function (event) {
+      const button = event.target.closest(".tab-btn");
+      if (!button) {
+        return;
+      }
+
+      currentStatus = button.dataset.status;
+      tabs.querySelectorAll(".tab-btn").forEach(function (item) {
+        item.classList.toggle("active", item === button);
+      });
+      applyOrderFilters();
+    });
+  }
+
+  // Ô tìm kiếm: lọc ngay khi gõ; chặn Enter làm tải lại trang
+  searchInput.addEventListener("input", applyOrderFilters);
+  searchInput.form.addEventListener("submit", function (event) {
+    event.preventDefault();
+  });
+
+  if (timeFilter) {
+    timeFilter.addEventListener("change", applyOrderFilters);
+  }
+
+  // Hủy đơn: xác nhận trước, sau đó chỉ đổi giao diện trên bản demo
+  // (dự án chưa có máy chủ nên không thao tác lên đơn hàng thật).
+  tbody.addEventListener("click", function (event) {
+    const button = event.target.closest(".btn-cancel-order");
+    if (!button) {
+      return;
+    }
+
+    const row = button.closest("tr");
+    const code = row.querySelector(".order-code").textContent;
+    const confirmed = confirm("Hủy đơn hàng " + code + "? Thao tác này chỉ thay đổi trên bản demo.");
+
+    if (!confirmed) {
+      return;
+    }
+
+    row.dataset.status = "cancelled"; // để bộ lọc tab biết trạng thái mới
+    const badge = row.querySelector(".badge");
+    badge.className = "badge badge-cancelled";
+    badge.textContent = "Đã hủy";
+    button.hidden = true; // đơn đã hủy thì không còn nút hủy
+
+    applyOrderFilters();
+    showToast("Đã hủy đơn hàng " + code + " (mô phỏng trên bản demo).");
+  });
+
+  applyOrderFilters(); // đồng bộ giao diện ngay khi mở trang
+}
+
+/* ---------- 13. Trang chi tiết đơn (order-details.html) ---------- */
+
+// Nút "Gửi yêu cầu chỉnh sửa": kiểm tra nội dung rồi lưu NHÁP vào
+// trình duyệt. Dự án chưa có máy chủ nên thông báo nói rõ là chưa gửi đi.
+function initOrderDetailsPage() {
+  const sendBtn = document.getElementById("send-revision-btn");
+  if (!sendBtn) {
+    return; // trang này không phải chi tiết đơn
+  }
+
+  const noteInput = document.getElementById("revision-note");
+
+  // Mở lại trang thì khôi phục nháp đã lưu lần trước (nếu có)
+  const draft = readJson(REVISION_DRAFT_KEY, null);
+  if (draft && typeof draft.content === "string") {
+    noteInput.value = draft.content;
+  }
+
+  sendBtn.addEventListener("click", function () {
+    const content = noteInput.value.trim();
+
+    if (content === "") {
+      showToast("Vui lòng nhập nội dung chỉnh sửa trước khi gửi.");
+      noteInput.focus();
+      return;
+    }
+
+    writeJson(REVISION_DRAFT_KEY, { content: content });
+    showToast("Đã lưu nháp trên trình duyệt — bản demo chưa gửi đến nghệ nhân.");
+  });
+}
+
+/* ---------- 14. Trang gợi ý nghệ nhân (artisan-suggestions.html) ---------- */
+
+// "Bỏ qua" một gợi ý sẽ ẩn thẻ nghệ nhân đó; "Tạo lại" hiện lại tất cả.
+// Đây là mô phỏng vì chưa có máy chủ AI thật để sinh gợi ý mới.
+function initArtisanSuggestionsPage() {
+  const list = document.querySelector(".artisan-list");
+  if (!list) {
+    return; // trang này không phải trang gợi ý nghệ nhân
+  }
+
+  const cards = Array.from(list.querySelectorAll(".artisan-suggestion-card"));
+
+  // Ủy quyền sự kiện cho cả danh sách: nút có id bắt đầu bằng "skip-"
+  // hoặc "regenerate-" thì xử lý theo tiền tố đó.
+  list.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) {
+      return;
+    }
+
+    if (button.id.startsWith("skip-")) {
+      const card = button.closest(".artisan-suggestion-card");
+      const name = card.querySelector(".artisan-name-lg").textContent;
+      card.hidden = true;
+      showToast("Đã bỏ qua gợi ý từ " + name + ".");
+    } else if (button.id.startsWith("regenerate-")) {
+      cards.forEach(function (card) {
+        card.hidden = false;
+      });
+      showToast("Đã tạo lại danh sách gợi ý nghệ nhân (mô phỏng).");
+    }
+  });
+}
+
+/* ---------- 15. Phản hồi trung thực cho các nút chưa có trong bản demo ---------- */
+
+// Một số liên kết/nút thuộc phạm vi khác của đồ án (đăng nhập, tin nhắn,
+// trợ giúp...) chưa có trang tương ứng. Thay vì để bấm vào không có gì
+// xảy ra, các nút này hiện toast nói rõ đây là bản demo.
+function initInactiveFeatures() {
+  document.addEventListener("click", function (event) {
+    // 1. Liên kết chân trang chưa có trang đích (href="#")
+    const deadLink = event.target.closest('a[href="#"]');
+    if (deadLink) {
+      event.preventDefault();
+      showToast("Bản demo chưa hỗ trợ chức năng này.");
+      return;
+    }
+
+    // 2. Nút icon trên header: Tin nhắn, Tài khoản
+    const iconButton = event.target.closest(".header-actions button.icon-btn");
+    if (iconButton) {
+      const label = iconButton.getAttribute("aria-label") || "này";
+      showToast("Chức năng " + label + " chưa có trong bản demo.");
+      return;
+    }
+
+    // 3. Nút "Báo cáo listing" ở trang chi tiết sản phẩm
+    const reportBtn = event.target.closest("#report-listing-btn");
+    if (reportBtn) {
+      showToast("Bản demo chưa hỗ trợ gửi báo cáo listing.");
+    }
+  });
+}
+
+/* ---------- 16. Khởi động ---------- */
 // Script nằm ở cuối <body> nên toàn bộ HTML đã được tải xong khi chạy.
 // Mỗi hàm init tự kiểm tra trang hiện tại có thành phần tương ứng không,
 // nên có thể gọi an toàn trên cả 8 trang.
 
-updateCartBadge();    // badge giỏ hàng trên header — chạy ở mọi trang
-initProductList();    // chỉ có tác dụng ở trang danh sách sản phẩm
-initProductDetail();  // chỉ có tác dụng ở trang chi tiết sản phẩm
-initCartPage();       // chỉ có tác dụng ở trang giỏ hàng
-initFavoriteButton(); // chỉ có tác dụng ở trang chi tiết sản phẩm
-initFavoritesPage();  // chỉ có tác dụng ở trang yêu thích
+updateCartBadge();             // badge giỏ hàng trên header — chạy ở mọi trang
+initProductList();             // chỉ có tác dụng ở trang danh sách sản phẩm
+initProductDetail();           // chỉ có tác dụng ở trang chi tiết sản phẩm
+initCartPage();                // chỉ có tác dụng ở trang giỏ hàng
+initFavoriteButton();          // chỉ có tác dụng ở trang chi tiết sản phẩm
+initFavoritesPage();           // chỉ có tác dụng ở trang yêu thích
+initProductGallery();          // chỉ có tác dụng ở trang chi tiết sản phẩm
+initCustomizePage();           // chỉ có tác dụng ở trang tạo brief
+initOrdersPage();              // chỉ có tác dụng ở trang đơn hàng
+initOrderDetailsPage();        // chỉ có tác dụng ở trang chi tiết đơn
+initArtisanSuggestionsPage();  // chỉ có tác dụng ở trang gợi ý nghệ nhân
+initInactiveFeatures();        // chạy ở mọi trang (các nút chưa có chức năng)

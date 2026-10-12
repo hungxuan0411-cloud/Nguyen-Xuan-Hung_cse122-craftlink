@@ -1173,6 +1173,7 @@ textarea:focus {
 .product-grid[hidden],
 .artisan-suggestion-card[hidden],
 .ai-status[hidden],
-.pagination[hidden] {
+.pagination[hidden],
+.btn-row[hidden] {
   display: none;
 }

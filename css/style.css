@@ -158,6 +158,7 @@ a {
 }
 
 .icon-btn {
+  position: relative; /* mốc định vị cho badge số lượng giỏ hàng */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -279,9 +280,21 @@ a {
   box-shadow: var(--shadow-card);
 }
 
+.filters-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
 .filters-title {
-  margin: 0 0 14px;
+  margin: 0;
   font-size: 17px;
+}
+
+.filters-head .link-action {
+  font-size: 13.5px;
 }
 
 .filter-group {
@@ -1103,4 +1116,62 @@ textarea:focus {
     grid-template-columns: 1fr;
     gap: 24px;
   }
+}
+
+
+/* ==========================================================================
+   Thành phần hỗ trợ JavaScript (GĐ1)
+   ========================================================================== */
+
+/* Badge số lượng sản phẩm trên icon giỏ hàng (JS cập nhật) */
+.cart-count {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Hộp thông báo (toast) — JS tạo phần tử khi cần, hiện đáy màn hình rồi tự ẩn */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 60;
+  max-width: min(90vw, 440px);
+  padding: 12px 18px;
+  border-radius: 10px;
+  background-color: #3b322a;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(67, 58, 50, 0.28);
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+
+.toast-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Các thành phần bên dưới có "display" riêng trong CSS nên khi JS ẩn bằng
+   thuộc tính hidden cần khai báo tường minh (mặc định của trình duyệt
+   không thắng được display của lớp). */
+.product-card[hidden],
+.artisan-suggestion-card[hidden],
+.ai-status[hidden],
+.pagination[hidden] {
+  display: none;
 }

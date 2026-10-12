@@ -33,6 +33,7 @@
         </button>
         <a href="cart.html" class="icon-btn" aria-label="Giỏ hàng">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span class="cart-count" id="cart-count" hidden></span>
         </a>
         <button type="button" class="icon-btn" aria-label="Tài khoản">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -67,11 +68,10 @@
     <div class="catalog">
 
       <aside class="filters" aria-label="Bộ lọc sản phẩm">
-          <div class="filters-head">
+        <div class="filters-head">
           <h2 class="filters-title">Bộ lọc</h2>
           <button type="button" class="link-action" id="reset-filters-btn">Xóa bộ lọc</button>
         </div>
-
 
         <form class="filter-form" id="filter-form">
 
@@ -184,7 +184,7 @@
 
         <ul class="product-grid" id="product-grid">
 
-          <li class="product-card">
+          <li class="product-card" data-id="coc-gom-la-nau" data-price="240000" data-category="do-dung-nha-bep" data-style="moc-mac toi-gian" data-lead-time="4-7" data-rating="4.9">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/coc-gom-la-nau.png" alt="Cốc gốm lá nâu thủ công">
@@ -201,7 +201,7 @@
             </article>
           </li>
 
-          <li class="product-card">
+          <li class="product-card" data-id="bat-gom-men-lam" data-price="180000" data-category="do-dung-nha-bep" data-style="truyen-thong" data-lead-time="4-7" data-rating="4.8">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/bat-gom-men-lam.png" alt="Bát gốm men lam">
@@ -218,7 +218,7 @@
             </article>
           </li>
 
-          <li class="product-card">
+          <li class="product-card" data-id="binh-gom-dang-tron" data-price="260000" data-category="do-trang-tri" data-style="toi-gian hien-dai" data-lead-time="8-14" data-rating="4.8">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/binh-gom-dang-tron.png" alt="Bình gốm dáng tròn">
@@ -235,7 +235,7 @@
             </article>
           </li>
 
-          <li class="product-card">
+          <li class="product-card" data-id="chuong-gio-gom" data-price="200000" data-category="phu-kien" data-style="moc-mac" data-lead-time="1-3" data-rating="4.8">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/chuong-gio-gom.png" alt="Chuông gió gốm">
@@ -252,7 +252,7 @@
             </article>
           </li>
 
-          <li class="product-card">
+          <li class="product-card" data-id="binh-gom-van-la" data-price="320000" data-category="do-trang-tri" data-style="moc-mac" data-lead-time="4-7" data-rating="4.9">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/binh-gom-van-la.png" alt="Bình gốm vân lá">
@@ -270,7 +270,7 @@
             </article>
           </li>
 
-          <li class="product-card">
+          <li class="product-card" data-id="dia-men-lam" data-price="210000" data-category="do-gom" data-style="truyen-thong toi-gian" data-lead-time="tren-14" data-rating="4.8">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/dia-men-lam.png" alt="Đĩa men lam thủ công">
@@ -288,7 +288,7 @@
             </article>
           </li>
 
-          <li class="product-card">
+          <li class="product-card" data-id="chau-cay-mini" data-price="150000" data-category="do-gom" data-style="moc-mac" data-lead-time="1-3" data-rating="4.7">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/chau-cay-mini.png" alt="Chậu cây mini mộc">
@@ -306,7 +306,7 @@
             </article>
           </li>
 
-          <li class="product-card">
+          <li class="product-card" data-id="bo-am-tra" data-price="680000" data-category="qua-tang" data-style="truyen-thong" data-lead-time="1-3" data-rating="5.0">
             <article>
               <a href="product-detail.html" class="product-media">
                 <img src="assets/images/bo-am-tra.png" alt="Bộ ấm trà gia đình">
@@ -376,6 +376,9 @@
       </div>
     </div>
   </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
 
 </body>
 </html>

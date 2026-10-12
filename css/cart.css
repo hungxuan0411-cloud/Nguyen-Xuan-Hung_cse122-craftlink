@@ -19,6 +19,17 @@
   gap: 16px;
 }
 
+/* Khi giỏ trống, JS gắn [hidden] vào danh sách — thuộc tính [hidden] cần
+   được nhắc lại ở đây vì quy tắc display: flex phía trên sẽ ghi đè nó */
+.cart-items ul[hidden] {
+  display: none;
+}
+
+/* Khi giỏ trống, JS thêm class này để lưới 2 cột thu về 1 cột */
+.cart-layout-empty {
+  grid-template-columns: 1fr;
+}
+
 .cart-item {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr) auto;

@@ -8,6 +8,13 @@
      4. Cập nhật badge số lượng trên icon giỏ hàng
      5. Hộp thông báo (toast)
 
+   Giai đoạn 2 (trang danh sách sản phẩm):
+     6. Tìm kiếm không dấu + lọc theo danh mục/giá/phong cách + sắp xếp
+
+   Giai đoạn 3 (giỏ hàng):
+     7. Trang chi tiết sản phẩm: chọn số lượng và thêm vào giỏ
+     8. Trang giỏ hàng: vẽ danh sách, tăng/giảm số lượng, xóa, tổng tiền
+
    File này được nhúng ở cuối <body> của cả 8 trang (sau data.js).
    Mọi thao tác với phần tử đều KIỂM TRA PHẦN TỬ CÓ TỒN TẠI trước,
    vì mỗi trang chỉ chứa một phần các thành phần giao diện.
@@ -406,8 +413,168 @@ function initProductList() {
   applyCatalog(); // đồng bộ giao diện ngay khi mở trang
 }
 
-/* ---------- 7. Khởi động ---------- */
-// Script nằm ở cuối <body> nên toàn bộ HTML đã được tải xong khi chạy.
+/* ---------- 7. Trang chi tiết sản phẩm (product-detail.html) ---------- */
 
-updateCartBadge();
-initProductList();
+// Trang chi tiết trong thiết kế (P8) hiển thị một sản phẩm mẫu là Cốc gốm lá nâu.
+const DETAIL_PRODUCT_ID = "coc-gom-la-nau";
+
+// Nút tăng/giảm số lượng và nút "Thêm vào giỏ hàng".
+// Chỉ chạy khi trang hiện tại có nút thêm vào giỏ.
+function initProductDetail() {
+  const addBtn = document.getElementById("add-to-cart-btn");
+  if (!addBtn) {
+    return; // trang này không phải chi tiết sản phẩm
+  }
+
+  const product = findProduct(DETAIL_PRODUCT_ID);
+  const qtyValue = document.getElementById("qty-value");
+  const decreaseBtn = document.getElementById("qty-decrease");
+  const increaseBtn = document.getElementById("qty-increase");
+
+  // Số lượng hiển thị luôn nằm trong khoảng 1..MAX_QTY
+  decreaseBtn.addEventListener("click", function () {
+    const qty = Number(qtyValue.textContent);
+    if (qty > 1) {
+      qtyValue.textContent = qty - 1;
+    }
+  });
+
+  increaseBtn.addEventListener("click", function () {
+    const qty = Number(qtyValue.textContent);
+    if (qty < MAX_QTY) {
+      qtyValue.textContent = qty + 1;
+    }
+  });
+
+  addBtn.addEventListener("click", function () {
+    const qty = Number(qtyValue.textContent);
+    const cart = readCart();
+    const existing = cart.find(function (item) {
+      return item.id === product.id;
+    });
+
+    if (existing) {
+      // Sản phẩm đã có trong giỏ -> cộng dồn số lượng, không vượt MAX_QTY
+      existing.qty = Math.min(existing.qty + qty, MAX_QTY);
+    } else {
+      cart.push({ id: product.id, qty: qty });
+    }
+
+    writeCart(cart);
+    updateCartBadge(); // badge trên icon giỏ hàng cập nhật ngay
+    qtyValue.textContent = 1; // đưa bộ chọn về 1 sau khi thêm
+    showToast("Đã thêm " + qty + " sản phẩm vào giỏ hàng.");
+  });
+}
+
+/* ---------- 8. Trang giỏ hàng (cart.html) ---------- */
+
+// Vẽ danh sách sản phẩm trong giỏ từ localStorage và xử lý
+// tăng / giảm số lượng, xóa sản phẩm, tính tổng tiền.
+function initCartPage() {
+  const cartList = document.getElementById("cart-list");
+  if (!cartList) {
+    return; // trang này không phải giỏ hàng
+  }
+
+  const template = document.getElementById("cart-item-template");
+  const emptyState = document.getElementById("cart-empty");
+  const summary = document.querySelector(".cart-summary");
+  const layout = document.querySelector(".cart-layout");
+  const subtotalEl = document.getElementById("cart-subtotal");
+  const totalEl = document.getElementById("cart-total");
+
+  // Vẽ lại toàn bộ danh sách từ dữ liệu. Mỗi thao tác (tăng/giảm/xóa)
+  // đều sửa dữ liệu rồi gọi lại hàm này nên giao diện luôn khớp dữ liệu.
+  function renderCart() {
+    const cart = readCart();
+
+    cartList.textContent = ""; // xóa các dòng cũ trước khi vẽ lại
+
+    let subtotal = 0;
+    cart.forEach(function (item) {
+      const product = findProduct(item.id);
+      const row = template.content.firstElementChild.cloneNode(true);
+
+      row.dataset.id = product.id; // dùng để biết đang thao tác với sản phẩm nào
+
+      const nameLink = row.querySelector(".cart-item-name a");
+      nameLink.textContent = product.name; // textContent an toàn
+      nameLink.href = "product-detail.html";
+
+      const img = row.querySelector("img");
+      img.src = product.image;
+      img.alt = product.name;
+
+      row.querySelector(".cart-item-artisan").textContent = "Nghệ nhân " + product.artisan;
+      row.querySelector(".cart-item-price").textContent = formatPrice(product.price);
+      row.querySelector(".qty-value").textContent = item.qty;
+      row.querySelector(".cart-item-subtotal").textContent = formatPrice(product.price * item.qty);
+
+      subtotal += product.price * item.qty;
+      cartList.appendChild(row);
+    });
+
+    subtotalEl.textContent = formatPrice(subtotal);
+    totalEl.textContent = formatPrice(subtotal);
+
+    // Giỏ trống: ẩn danh sách và phần tóm tắt, hiện lời nhắn thay thế
+    const isEmpty = cart.length === 0;
+    cartList.hidden = isEmpty;
+    summary.hidden = isEmpty;
+    emptyState.hidden = !isEmpty;
+    layout.classList.toggle("cart-layout-empty", isEmpty);
+  }
+
+  // Một listener duy nhất cho cả danh sách (ủy quyền sự kiện):
+  // nút nào được bấm thì đọc data-action của nút đó.
+  cartList.addEventListener("click", function (event) {
+    const button = event.target.closest("[data-action]");
+    if (!button) {
+      return;
+    }
+
+    const row = button.closest(".cart-item");
+    const id = row.dataset.id;
+    const cart = readCart();
+    const item = cart.find(function (entry) {
+      return entry.id === id;
+    });
+    if (!item) {
+      return;
+    }
+
+    const action = button.dataset.action;
+    if (action === "increase") {
+      if (item.qty >= MAX_QTY) {
+        return; // đã đạt số lượng tối đa
+      }
+      item.qty += 1;
+    } else if (action === "decrease") {
+      if (item.qty <= 1) {
+        return; // giảm đến 1 là dừng; muốn bỏ hẳn thì bấm nút "Xóa"
+      }
+      item.qty -= 1;
+    } else if (action === "remove") {
+      const index = cart.indexOf(item);
+      cart.splice(index, 1);
+      showToast("Đã xóa " + findProduct(id).name + " khỏi giỏ hàng.");
+    }
+
+    writeCart(cart);
+    updateCartBadge();
+    renderCart();
+  });
+
+  renderCart(); // vẽ danh sách ngay khi mở trang
+}
+
+/* ---------- 9. Khởi động ---------- */
+// Script nằm ở cuối <body> nên toàn bộ HTML đã được tải xong khi chạy.
+// Mỗi hàm init tự kiểm tra trang hiện tại có thành phần tương ứng không,
+// nên có thể gọi an toàn trên cả 8 trang.
+
+updateCartBadge();   // badge giỏ hàng trên header — chạy ở mọi trang
+initProductList();   // chỉ có tác dụng ở trang danh sách sản phẩm
+initProductDetail(); // chỉ có tác dụng ở trang chi tiết sản phẩm
+initCartPage();      // chỉ có tác dụng ở trang giỏ hàng

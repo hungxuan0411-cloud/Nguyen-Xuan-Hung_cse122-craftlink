@@ -65,69 +65,31 @@
       <section class="cart-items" aria-label="Sản phẩm trong giỏ">
         <h2 class="visually-hidden">Sản phẩm trong giỏ</h2>
 
-        <ul id="cart-list">
+        <ul id="cart-list"></ul>
 
-          <li class="cart-item panel" id="cart-item-1">
+        <!-- Mẫu một dòng sản phẩm trong giỏ: JavaScript nhân bản (clone) mẫu
+             này cho từng sản phẩm đọc từ localStorage rồi gắn vào #cart-list -->
+        <template id="cart-item-template">
+          <li class="cart-item panel">
             <a href="product-detail.html" class="cart-item-media">
-              <img src="assets/images/coc-gom-la-nau.png" alt="Cốc gốm lá nâu thủ công">
+              <img src="" alt="">
             </a>
             <div class="cart-item-info">
-              <h3 class="cart-item-name"><a href="product-detail.html">Cốc gốm lá nâu thủ công</a></h3>
-              <p class="cart-item-artisan">Nghệ nhân Linh Gốm</p>
-              <p class="cart-item-price">240.000 ₫</p>
+              <h3 class="cart-item-name"><a href="product-detail.html"></a></h3>
+              <p class="cart-item-artisan"></p>
+              <p class="cart-item-price"></p>
             </div>
             <div class="cart-item-side">
               <div class="quantity-stepper">
-                <button type="button" class="qty-btn" id="cart-qty-decrease-1" aria-label="Giảm số lượng">−</button>
-                <span class="qty-value" id="cart-qty-value-1">2</span>
-                <button type="button" class="qty-btn" id="cart-qty-increase-1" aria-label="Tăng số lượng">+</button>
+                <button type="button" class="qty-btn" data-action="decrease" aria-label="Giảm số lượng">−</button>
+                <span class="qty-value">1</span>
+                <button type="button" class="qty-btn" data-action="increase" aria-label="Tăng số lượng">+</button>
               </div>
-              <p class="cart-item-subtotal">480.000 ₫</p>
-              <button type="button" class="link-action btn-remove" id="cart-remove-1">Xóa</button>
+              <p class="cart-item-subtotal"></p>
+              <button type="button" class="link-action btn-remove" data-action="remove">Xóa</button>
             </div>
           </li>
-
-          <li class="cart-item panel" id="cart-item-2">
-            <a href="product-detail.html" class="cart-item-media">
-              <img src="assets/images/bo-am-tra.png" alt="Bộ ấm trà gia đình">
-            </a>
-            <div class="cart-item-info">
-              <h3 class="cart-item-name"><a href="product-detail.html">Bộ ấm trà gia đình</a></h3>
-              <p class="cart-item-artisan">Nghệ nhân Gốm Mộc</p>
-              <p class="cart-item-price">680.000 ₫</p>
-            </div>
-            <div class="cart-item-side">
-              <div class="quantity-stepper">
-                <button type="button" class="qty-btn" id="cart-qty-decrease-2" aria-label="Giảm số lượng">−</button>
-                <span class="qty-value" id="cart-qty-value-2">1</span>
-                <button type="button" class="qty-btn" id="cart-qty-increase-2" aria-label="Tăng số lượng">+</button>
-              </div>
-              <p class="cart-item-subtotal">680.000 ₫</p>
-              <button type="button" class="link-action btn-remove" id="cart-remove-2">Xóa</button>
-            </div>
-          </li>
-
-          <li class="cart-item panel" id="cart-item-3">
-            <a href="product-detail.html" class="cart-item-media">
-              <img src="assets/images/chau-cay-mini.png" alt="Chậu cây mini mộc">
-            </a>
-            <div class="cart-item-info">
-              <h3 class="cart-item-name"><a href="product-detail.html">Chậu cây mini mộc</a></h3>
-              <p class="cart-item-artisan">Nghệ nhân Gốm Nhà Quê</p>
-              <p class="cart-item-price">150.000 ₫</p>
-            </div>
-            <div class="cart-item-side">
-              <div class="quantity-stepper">
-                <button type="button" class="qty-btn" id="cart-qty-decrease-3" aria-label="Giảm số lượng">−</button>
-                <span class="qty-value" id="cart-qty-value-3">1</span>
-                <button type="button" class="qty-btn" id="cart-qty-increase-3" aria-label="Tăng số lượng">+</button>
-              </div>
-              <p class="cart-item-subtotal">150.000 ₫</p>
-              <button type="button" class="link-action btn-remove" id="cart-remove-3">Xóa</button>
-            </div>
-          </li>
-
-        </ul>
+        </template>
 
         <div class="empty-state" id="cart-empty" hidden>
           <p class="empty-state-title">Giỏ hàng của bạn đang trống</p>

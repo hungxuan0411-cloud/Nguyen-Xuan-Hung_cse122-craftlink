@@ -136,6 +136,10 @@
 }
 
 .btn-favorite[aria-pressed="true"] svg {
+  fill: currentColor; /* trái tim đặc khi sản phẩm đã nằm trong yêu thích */
+}
+
+.btn-favorite[aria-pressed="true"] svg {
   fill: currentColor;
 }
 

@@ -1170,6 +1170,7 @@ textarea:focus {
    thuộc tính hidden cần khai báo tường minh (mặc định của trình duyệt
    không thắng được display của lớp). */
 .product-card[hidden],
+.product-grid[hidden],
 .artisan-suggestion-card[hidden],
 .ai-status[hidden],
 .pagination[hidden] {

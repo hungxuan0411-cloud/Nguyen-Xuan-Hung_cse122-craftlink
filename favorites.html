@@ -62,84 +62,30 @@
     <section aria-label="Danh sách sản phẩm yêu thích">
       <h2 class="visually-hidden">Danh sách sản phẩm yêu thích</h2>
 
-      <ul class="product-grid" id="favorites-grid">
+      <ul class="product-grid" id="favorites-grid"></ul>
 
-        <li class="product-card" id="fav-binh-gom-van-la">
+      <!-- Mẫu một thẻ sản phẩm yêu thích: JavaScript nhân bản (clone) mẫu này
+           cho từng sản phẩm trong danh sách đọc từ localStorage -->
+      <template id="favorite-card-template">
+        <li class="product-card">
           <article>
             <a href="product-detail.html" class="product-media">
-              <img src="assets/images/binh-gom-van-la.png" alt="Bình gốm vân lá">
+              <img src="" alt="">
             </a>
             <div class="product-body">
-              <h3 class="product-name"><a href="product-detail.html">Bình gốm vân lá</a></h3>
-              <p class="product-artisan">Linh Gốm</p>
+              <h3 class="product-name"><a href="product-detail.html"></a></h3>
+              <p class="product-artisan"></p>
               <div class="product-meta">
-                <span class="product-price">320.000₫</span>
-                <span class="product-rating"><span class="star" aria-hidden="true">★</span> 4.9 <span class="rating-count">(46)</span></span>
+                <span class="product-price"></span>
+                <span class="product-rating"><span class="star" aria-hidden="true">★</span> <span class="rating-value"></span> <span class="rating-count"></span></span>
               </div>
-              <p class="product-note">Giao dự kiến 3–5 ngày</p>
+              <p class="product-note"></p>
               <a href="customize.html" class="btn-customize">Yêu cầu tùy biến</a>
-              <button type="button" class="link-action btn-remove-favorite" id="remove-fav-binh-gom-van-la">Bỏ yêu thích</button>
+              <button type="button" class="link-action btn-remove-favorite">Bỏ yêu thích</button>
             </div>
           </article>
         </li>
-
-        <li class="product-card" id="fav-dia-men-lam">
-          <article>
-            <a href="product-detail.html" class="product-media">
-              <img src="assets/images/dia-men-lam.png" alt="Đĩa men lam thủ công">
-            </a>
-            <div class="product-body">
-              <h3 class="product-name"><a href="product-detail.html">Đĩa men lam thủ công</a></h3>
-              <p class="product-artisan">Gốm An Nhiên</p>
-              <div class="product-meta">
-                <span class="product-price">210.000₫</span>
-                <span class="product-rating"><span class="star" aria-hidden="true">★</span> 4.8 <span class="rating-count">(63)</span></span>
-              </div>
-              <p class="product-note">Nhận đặt làm theo yêu cầu</p>
-              <a href="customize.html" class="btn-customize">Yêu cầu tùy biến</a>
-              <button type="button" class="link-action btn-remove-favorite" id="remove-fav-dia-men-lam">Bỏ yêu thích</button>
-            </div>
-          </article>
-        </li>
-
-        <li class="product-card" id="fav-chuong-gio-gom">
-          <article>
-            <a href="product-detail.html" class="product-media">
-              <img src="assets/images/chuong-gio-gom.png" alt="Chuông gió gốm">
-            </a>
-            <div class="product-body">
-              <h3 class="product-name"><a href="product-detail.html">Chuông gió gốm</a></h3>
-              <p class="product-artisan">Gốm Mộc</p>
-              <div class="product-meta">
-                <span class="product-price">200.000₫</span>
-                <span class="product-rating"><span class="star" aria-hidden="true">★</span> 4.8 <span class="rating-count">(100)</span></span>
-              </div>
-              <a href="customize.html" class="btn-customize">Yêu cầu tùy biến</a>
-              <button type="button" class="link-action btn-remove-favorite" id="remove-fav-chuong-gio-gom">Bỏ yêu thích</button>
-            </div>
-          </article>
-        </li>
-
-        <li class="product-card" id="fav-bo-am-tra">
-          <article>
-            <a href="product-detail.html" class="product-media">
-              <img src="assets/images/bo-am-tra.png" alt="Bộ ấm trà gia đình">
-            </a>
-            <div class="product-body">
-              <h3 class="product-name"><a href="product-detail.html">Bộ ấm trà gia đình</a></h3>
-              <p class="product-artisan">Gốm Mộc</p>
-              <div class="product-meta">
-                <span class="product-price">680.000₫</span>
-                <span class="product-rating"><span class="star" aria-hidden="true">★</span> 5.0 <span class="rating-count">(21)</span></span>
-              </div>
-              <p class="product-note">Có sẵn • Đổi trả 7 ngày</p>
-              <a href="customize.html" class="btn-customize">Yêu cầu tùy biến</a>
-              <button type="button" class="link-action btn-remove-favorite" id="remove-fav-bo-am-tra">Bỏ yêu thích</button>
-            </div>
-          </article>
-        </li>
-
-      </ul>
+      </template>
 
       <div class="empty-state" id="favorites-empty" hidden>
         <p class="empty-state-title">Chưa có sản phẩm yêu thích</p>

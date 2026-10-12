@@ -15,6 +15,9 @@
      7. Trang chi tiết sản phẩm: chọn số lượng và thêm vào giỏ
      8. Trang giỏ hàng: vẽ danh sách, tăng/giảm số lượng, xóa, tổng tiền
 
+   Giai đoạn 4 (yêu thích):
+     9. Nút trái tim ở trang chi tiết + trang danh sách yêu thích
+
    File này được nhúng ở cuối <body> của cả 8 trang (sau data.js).
    Mọi thao tác với phần tử đều KIỂM TRA PHẦN TỬ CÓ TỒN TẠI trước,
    vì mỗi trang chỉ chứa một phần các thành phần giao diện.
@@ -569,12 +572,128 @@ function initCartPage() {
   renderCart(); // vẽ danh sách ngay khi mở trang
 }
 
-/* ---------- 9. Khởi động ---------- */
+/* ---------- 9. Yêu thích ---------- */
+
+// Nút trái tim ở trang chi tiết sản phẩm: bấm để thêm/bỏ yêu thích.
+// Trạng thái nút được đọc lại từ localStorage nên mở lại trang vẫn đúng.
+function initFavoriteButton() {
+  const button = document.getElementById("favorite-btn");
+  if (!button) {
+    return; // trang này không phải chi tiết sản phẩm
+  }
+
+  const product = findProduct(DETAIL_PRODUCT_ID);
+
+  // Đồng bộ trạng thái nút với dữ liệu đang lưu. Thuộc tính aria-pressed
+  // vừa giúp trình đọc màn hình biết trạng thái, vừa được CSS dùng để
+  // tô trái tim đặc khi sản phẩm đã nằm trong yêu thích.
+  function syncButton() {
+    const isFavorite = readFavorites().includes(product.id);
+    button.setAttribute("aria-pressed", String(isFavorite));
+  }
+
+  button.addEventListener("click", function () {
+    const favorites = readFavorites();
+    const index = favorites.indexOf(product.id);
+
+    if (index === -1) {
+      favorites.push(product.id);
+      showToast("Đã thêm " + product.name + " vào yêu thích.");
+    } else {
+      favorites.splice(index, 1);
+      showToast("Đã bỏ " + product.name + " khỏi yêu thích.");
+    }
+
+    writeFavorites(favorites);
+    syncButton();
+  });
+
+  syncButton(); // cập nhật ngay khi mở trang
+}
+
+// Trang danh sách yêu thích: vẽ lưới sản phẩm từ các id trong localStorage.
+function initFavoritesPage() {
+  const grid = document.getElementById("favorites-grid");
+  if (!grid) {
+    return; // trang này không phải danh sách yêu thích
+  }
+
+  const template = document.getElementById("favorite-card-template");
+  const emptyState = document.getElementById("favorites-empty");
+
+  function renderFavorites() {
+    const favorites = readFavorites();
+
+    grid.textContent = ""; // xóa các thẻ cũ trước khi vẽ lại
+
+    favorites.forEach(function (id) {
+      const product = findProduct(id);
+      const card = template.content.firstElementChild.cloneNode(true);
+
+      card.dataset.id = product.id; // dùng khi bấm "Bỏ yêu thích"
+
+      const mediaLink = card.querySelector(".product-media");
+      mediaLink.href = "product-detail.html";
+
+      const img = card.querySelector("img");
+      img.src = product.image;
+      img.alt = product.name;
+
+      const nameLink = card.querySelector(".product-name a");
+      nameLink.textContent = product.name; // textContent an toàn
+      nameLink.href = "product-detail.html";
+
+      card.querySelector(".product-artisan").textContent = product.artisan;
+      card.querySelector(".product-price").textContent = formatPrice(product.price);
+      // toFixed(1) để điểm 5 hiển thị "5.0" đúng như thiết kế
+      card.querySelector(".rating-value").textContent = product.rating.toFixed(1);
+      card.querySelector(".rating-count").textContent = "(" + product.reviewCount + ")";
+
+      const noteEl = card.querySelector(".product-note");
+      if (product.note) {
+        noteEl.textContent = product.note;
+      } else {
+        noteEl.remove(); // sản phẩm không có ghi chú thì bỏ hẳn dòng này
+      }
+
+      grid.appendChild(card);
+    });
+
+    // Không còn sản phẩm nào: ẩn lưới, hiện lời nhắn thay thế
+    const isEmpty = favorites.length === 0;
+    grid.hidden = isEmpty;
+    emptyState.hidden = !isEmpty;
+  }
+
+  // Ủy quyền sự kiện: một listener cho cả lưới, nút nào bấm thì xử lý nút đó
+  grid.addEventListener("click", function (event) {
+    const button = event.target.closest(".btn-remove-favorite");
+    if (!button) {
+      return;
+    }
+
+    const card = button.closest(".product-card");
+    const id = card.dataset.id;
+    const favorites = readFavorites().filter(function (entry) {
+      return entry !== id;
+    });
+
+    writeFavorites(favorites);
+    showToast("Đã bỏ " + findProduct(id).name + " khỏi yêu thích.");
+    renderFavorites();
+  });
+
+  renderFavorites(); // vẽ danh sách ngay khi mở trang
+}
+
+/* ---------- 10. Khởi động ---------- */
 // Script nằm ở cuối <body> nên toàn bộ HTML đã được tải xong khi chạy.
 // Mỗi hàm init tự kiểm tra trang hiện tại có thành phần tương ứng không,
 // nên có thể gọi an toàn trên cả 8 trang.
 
-updateCartBadge();   // badge giỏ hàng trên header — chạy ở mọi trang
-initProductList();   // chỉ có tác dụng ở trang danh sách sản phẩm
-initProductDetail(); // chỉ có tác dụng ở trang chi tiết sản phẩm
-initCartPage();      // chỉ có tác dụng ở trang giỏ hàng
+updateCartBadge();    // badge giỏ hàng trên header — chạy ở mọi trang
+initProductList();    // chỉ có tác dụng ở trang danh sách sản phẩm
+initProductDetail();  // chỉ có tác dụng ở trang chi tiết sản phẩm
+initCartPage();       // chỉ có tác dụng ở trang giỏ hàng
+initFavoriteButton(); // chỉ có tác dụng ở trang chi tiết sản phẩm
+initFavoritesPage();  // chỉ có tác dụng ở trang yêu thích

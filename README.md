@@ -45,10 +45,10 @@ Cho phép người mua xem danh sách sản phẩm thủ công, tùy biến yêu
 https://www.canva.com/design/DAHWyBVvS6U/eyYrsvv49jN-26FeiXk-Aw/edit
 
 ## GitHub
-https://github.com/hungxuan0411-cloud/Nguyen-Xuan-Hung_cse122-craftlink
+https://github.com/hungxuan0411-cloud/Nguyen-Xuan-H-ung_CSE122_craftlink-presentation
 
 ## Video trình bày
-Chưa bổ sung liên kết.
+https://www.youtube.com/watch?v=3UAWNLqSxcY&list=PLK12prV3f_5A
 
 ## Cách chạy
 Mở `index.html` bằng trình duyệt hoặc dùng Live Server trong VS Code.

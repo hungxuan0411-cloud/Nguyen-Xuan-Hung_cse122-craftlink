@@ -6,6 +6,7 @@
   <title>Danh sách sản phẩm | CraftLink</title>
   <meta name="description" content="Danh sách sản phẩm thủ công trên CraftLink — sàn sản phẩm sáng tạo tùy biến, kết nối bạn với các nghệ nhân.">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ai-advisor.css">
 </head>
 <body>
 
@@ -64,6 +65,170 @@
         <input type="search" id="search-input" name="search" placeholder="Tìm sản phẩm, nghệ nhân hoặc phong cách...">
       </form>
     </section>
+
+    <section class="panel ai-advisor" id="ai-advisor" aria-labelledby="ai-advisor-title">
+      <div class="ai-advisor-head">
+        <div class="ai-advisor-heading">
+          <p class="ai-eyebrow">CraftLink AI</p>
+          <h2 id="ai-advisor-title">Trợ lý thủ công thông minh</h2>
+          <p class="ai-subtitle">Mô tả điều bạn cần — trợ lý sẽ phân tích ý định, tìm trong dữ liệu sản phẩm và nghệ nhân hiện có, rồi giải thích vì sao phù hợp.</p>
+        </div>
+        <p class="ai-mode-tag">Tìm kiếm cục bộ</p>
+      </div>
+
+      <form class="ai-form" id="ai-form" novalidate>
+        <label class="visually-hidden" for="ai-input">Mô tả điều bạn đang tìm</label>
+        <textarea class="ai-input" id="ai-input" name="ai-input" rows="3" maxlength="300"
+          placeholder="Ví dụ: Tôi cần một món quà sinh nhật bằng gốm dưới 300.000đ..."
+          title="Mẹo: nhấn Ctrl + Enter để gửi"></textarea>
+
+        <div class="ai-suggestions" id="ai-suggestions" aria-label="Gợi ý câu hỏi">
+          <span class="ai-suggestions-label">Thử nhanh:</span>
+          <button type="button" class="ai-chip" data-prompt="Quà sinh nhật bằng gốm dưới 300.000đ">Quà gốm dưới 300.000₫</button>
+          <button type="button" class="ai-chip" data-prompt="Tìm thợ gỗ ở Hà Nội">Thợ gỗ ở Hà Nội</button>
+          <button type="button" class="ai-chip" data-prompt="Bình gốm trang trí tối giản">Bình gốm trang trí tối giản</button>
+          <button type="button" class="ai-chip" data-prompt="Nghệ nhân nhận đặt làm theo yêu cầu">Nghệ nhân nhận đặt làm</button>
+          <button type="button" class="ai-chip" data-prompt="Bát gốm men lam">Bát gốm men lam</button>
+        </div>
+
+        <div class="ai-actions btn-row">
+          <button type="submit" class="btn-primary" id="ai-submit-btn">Tư vấn ngay</button>
+          <button type="button" class="btn-light" id="ai-reset-btn">Xóa nội dung</button>
+        </div>
+      </form>
+
+      <div class="ai-status" id="ai-status" role="status" hidden>
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Đang phân tích câu hỏi và đối chiếu dữ liệu mẫu...</span>
+      </div>
+
+      <p class="form-note ai-error" id="ai-error" role="alert" hidden></p>
+
+      <div class="ai-answer" id="ai-answer" aria-live="polite" hidden>
+        <p class="ai-answer-text" id="ai-answer-text"></p>
+        <ul class="ai-criteria-list" id="ai-criteria"></ul>
+      </div>
+
+      <div class="ai-followup" id="ai-followup" hidden>
+        <p class="ai-followup-title">Bạn cho tôi biết thêm để lọc chính xác hơn:</p>
+        <div class="ai-followup-row" id="ai-budget-followup" hidden>
+          <span class="ai-followup-label">Ngân sách tối đa:</span>
+          <button type="button" class="ai-chip" data-budget="100000">Dưới 100.000₫</button>
+          <button type="button" class="ai-chip" data-budget="200000">Dưới 200.000₫</button>
+          <button type="button" class="ai-chip" data-budget="300000">Dưới 300.000₫</button>
+          <button type="button" class="ai-chip" data-budget="500000">Dưới 500.000₫</button>
+          <button type="button" class="ai-chip" data-budget="all">Xem tất cả</button>
+        </div>
+        <div class="ai-followup-row" id="ai-location-followup" hidden>
+          <span class="ai-followup-label">Địa điểm:</span>
+          <button type="button" class="ai-chip" data-location="ha-noi">Hà Nội</button>
+          <button type="button" class="ai-chip" data-location="ho-chi-minh">TP. Hồ Chí Minh</button>
+          <button type="button" class="ai-chip" data-location="da-nang">Đà Nẵng</button>
+          <button type="button" class="ai-chip" data-location="all">Xem tất cả</button>
+        </div>
+      </div>
+
+      <div class="ai-results" id="ai-results" aria-live="polite" hidden>
+        <section class="ai-result-block" id="ai-product-block" aria-label="Sản phẩm phù hợp">
+          <div class="ai-result-head">
+            <h3 class="ai-result-title">Sản phẩm phù hợp</h3>
+            <span class="ai-result-count" id="ai-product-count" hidden></span>
+          </div>
+          <ul class="ai-result-grid" id="ai-product-results"></ul>
+          <div class="empty-state" id="ai-product-empty" hidden>
+            <p class="empty-state-title">Chưa có sản phẩm phù hợp</p>
+            <p class="empty-state-text"></p>
+          </div>
+        </section>
+
+        <section class="ai-result-block" id="ai-artisan-block" aria-label="Nghệ nhân phù hợp">
+          <div class="ai-result-head">
+            <h3 class="ai-result-title">Nghệ nhân phù hợp</h3>
+            <span class="ai-result-count" id="ai-artisan-count" hidden></span>
+          </div>
+          <ul class="ai-artisan-list" id="ai-artisan-results"></ul>
+          <div class="empty-state" id="ai-artisan-empty" hidden>
+            <p class="empty-state-title">Chưa có nghệ nhân phù hợp</p>
+            <p class="empty-state-text"></p>
+          </div>
+          <div class="ai-unverified" id="ai-unverified-block" hidden>
+            <h4 class="ai-unverified-title">Có chuyên môn phù hợp nhưng chưa có dữ liệu địa điểm</h4>
+            <p class="ai-unverified-text">Các nghệ nhân dưới đây khớp tiêu chí chuyên môn, nhưng dự án chưa có thông tin địa điểm nên chưa thể xác nhận theo yêu cầu của bạn.</p>
+            <ul class="ai-unverified-list" id="ai-unverified-results"></ul>
+          </div>
+        </section>
+
+        <div class="empty-state ai-empty" id="ai-empty" hidden>
+          <p class="empty-state-title" id="ai-empty-title">Chưa tìm thấy kết quả phù hợp</p>
+          <p class="empty-state-text" id="ai-empty-text"></p>
+          <button type="button" class="btn-light" id="ai-empty-reset">Xóa nội dung và thử lại</button>
+        </div>
+      </div>
+
+      <p class="ai-disclaimer">
+        <strong>Về tính năng này:</strong> Đây là bản demo tìm kiếm cục bộ theo từ khóa và tiêu chí,
+        <strong>chưa kết nối mô hình AI tạo sinh</strong>. Kết quả chỉ dựa trên dữ liệu mẫu có sẵn
+        trong dự án và không gửi dữ liệu ra ngoài. Thông tin chưa có sẽ được ghi rõ “Chưa có thông tin”.
+      </p>
+    </section>
+
+    <template id="ai-product-template">
+      <li class="product-card ai-product-card">
+        <article>
+          <a href="product-detail.html" class="product-media ai-product-media">
+            <img class="ai-product-image" src="" alt="">
+          </a>
+          <div class="product-body">
+            <h4 class="product-name"><a href="product-detail.html" class="ai-product-name"></a></h4>
+            <p class="product-artisan"><span class="ai-product-artisan"></span></p>
+            <div class="product-meta">
+              <span class="product-price"></span>
+              <span class="product-rating"><span class="star" aria-hidden="true">★</span> <span class="ai-product-rating"></span></span>
+            </div>
+            <p class="product-note ai-product-note" hidden></p>
+            <p class="ai-match-line"><span class="ai-match-badge"></span><span class="ai-match-text"></span></p>
+            <p class="ai-reason"></p>
+            <a href="product-detail.html" class="btn-customize ai-detail-btn">Xem chi tiết</a>
+          </div>
+        </article>
+      </li>
+    </template>
+
+    <template id="ai-artisan-template">
+      <li class="ai-artisan-card">
+        <div class="ai-artisan-head">
+          <img class="avatar avatar-lg ai-artisan-avatar" src="" alt="">
+          <span class="ai-artisan-initial" hidden aria-hidden="true"></span>
+          <div class="ai-artisan-identity">
+            <h4 class="ai-artisan-name"></h4>
+            <p class="ai-artisan-shop" hidden></p>
+            <p class="ai-match-line"><span class="ai-match-badge"></span><span class="ai-match-text"></span></p>
+          </div>
+        </div>
+        <ul class="ai-artisan-tags"></ul>
+        <dl class="ai-artisan-facts">
+          <dt>Chuyên môn</dt><dd class="ai-fact-specialty"></dd>
+          <dt>Địa điểm</dt><dd class="ai-fact-location"></dd>
+          <dt>Giá sản phẩm mẫu</dt><dd class="ai-fact-price"></dd>
+          <dt>Nhận đơn tùy biến</dt><dd class="ai-fact-custom"></dd>
+        </dl>
+        <p class="ai-artisan-reason"></p>
+        <p class="ai-demo-note" hidden></p>
+        <button type="button" class="btn-primary ai-artisan-products-btn">Xem sản phẩm của thợ</button>
+      </li>
+    </template>
+
+    <template id="ai-unverified-template">
+      <li class="ai-unverified-item">
+        <img class="avatar avatar-sm ai-unverified-avatar" src="" alt="">
+        <span class="ai-unverified-initial" hidden aria-hidden="true"></span>
+        <div class="ai-unverified-body">
+          <p class="ai-unverified-name"></p>
+          <p class="ai-unverified-meta"></p>
+          <p class="ai-unverified-reason"></p>
+        </div>
+      </li>
+    </template>
 
     <div class="catalog">
 
@@ -379,6 +544,7 @@
 
   <script src="js/data.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/ai-advisor.js"></script>
 
 </body>
 </html>

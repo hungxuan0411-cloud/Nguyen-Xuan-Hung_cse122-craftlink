@@ -50,15 +50,15 @@
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <ol>
         <li><a href="index.html">Trang chủ</a></li>
-        <li><a href="customize.html">Tùy biến</a></li>
-        <li><span aria-current="page">Xác nhận đơn</span></li>
+        <li><a href="customize.html" id="checkout-breadcrumb-mode">Tùy biến</a></li>
+        <li><span aria-current="page" id="checkout-breadcrumb-current">Xác nhận đơn</span></li>
       </ol>
     </nav>
 
     <section class="page-heading" aria-labelledby="page-title">
       <div>
         <h1 id="page-title">Xác nhận đơn tùy biến</h1>
-        <p class="page-subtitle">Xem lại yêu cầu, nhập thông tin nhận hàng và chọn phương thức thanh toán, giao hàng.</p>
+        <p class="page-subtitle" id="checkout-page-subtitle">Xem lại yêu cầu, nhập thông tin nhận hàng và chọn phương thức thanh toán, giao hàng.</p>
       </div>
     </section>
 
@@ -88,34 +88,50 @@
         <section class="panel checkout-step-panel" data-step="1" aria-labelledby="step1-title" hidden>
           <h2 class="panel-title" id="step1-title">1. Xem lại yêu cầu tùy biến</h2>
 
-          <div class="checkout-product">
-            <img id="review-product-image" src="" alt="">
-            <div>
-              <p class="checkout-product-name" id="review-product-name"></p>
-              <p class="checkout-product-meta" id="review-product-meta"></p>
-              <p class="checkout-product-price" id="review-product-price"></p>
+          <div id="review-single">
+            <div class="checkout-product">
+              <img id="review-product-image" src="" alt="">
+              <div>
+                <p class="checkout-product-name" id="review-product-name"></p>
+                <p class="checkout-product-meta" id="review-product-meta"></p>
+                <p class="checkout-product-price" id="review-product-price"></p>
+              </div>
             </div>
+
+            <dl class="info-list checkout-review-list">
+              <dt>Nghệ nhân đã chọn</dt>
+              <dd id="review-artisan"></dd>
+              <dt>Số lượng</dt>
+              <dd id="review-qty"></dd>
+              <dt>Brief tùy biến</dt>
+              <dd class="checkout-brief-text" id="review-brief"></dd>
+              <dt>Thời gian hoàn thành dự kiến</dt>
+              <dd id="review-lead-time"></dd>
+              <dt>Tạm tính</dt>
+              <dd id="review-total"></dd>
+            </dl>
+
+            <p class="checkout-honest-note">Đơn giá lấy từ dữ liệu sản phẩm mẫu. Dự án chưa có quy tắc phụ phí tùy biến nên không cộng thêm chi phí nào.</p>
           </div>
 
-          <dl class="info-list checkout-review-list">
-            <dt>Nghệ nhân đã chọn</dt>
-            <dd id="review-artisan"></dd>
-            <dt>Số lượng</dt>
-            <dd id="review-qty"></dd>
-            <dt>Brief tùy biến</dt>
-            <dd class="checkout-brief-text" id="review-brief"></dd>
-            <dt>Thời gian hoàn thành dự kiến</dt>
-            <dd id="review-lead-time"></dd>
-            <dt>Tạm tính</dt>
-            <dd id="review-total"></dd>
-          </dl>
+          <div id="review-cart" hidden>
+            <ul class="checkout-item-list" id="review-cart-list"></ul>
 
-          <p class="checkout-honest-note">Đơn giá lấy từ dữ liệu sản phẩm mẫu. Dự án chưa có quy tắc phụ phí tùy biến nên không cộng thêm chi phí nào.</p>
+            <dl class="info-list checkout-review-list">
+              <dt>Số lượng sản phẩm</dt>
+              <dd id="review-cart-count"></dd>
+              <dt>Tạm tính</dt>
+              <dd id="review-cart-total"></dd>
+            </dl>
+
+            <p class="checkout-honest-note">Đơn giá lấy từ dữ liệu sản phẩm mẫu. Dự án chưa có quy tắc phụ phí hoặc phí giao hàng nên tạm tính chỉ gồm giá sản phẩm × số lượng.</p>
+          </div>
 
           <div class="btn-row checkout-actions">
             <button type="button" class="btn-primary" id="step1-next">Tiếp tục</button>
             <a href="customize.html" class="btn-outline" id="review-edit-brief">Sửa brief / số lượng</a>
             <a href="artisan-suggestions.html" class="btn-light" id="review-change-artisan">Đổi nghệ nhân</a>
+            <a href="cart.html" class="btn-outline" id="review-back-cart" hidden>Sửa giỏ hàng</a>
           </div>
         </section>
 
@@ -204,7 +220,7 @@
         <section class="panel checkout-step-panel" data-step="4" aria-labelledby="step4-title" hidden>
           <h2 class="panel-title" id="step4-title">4. Xác nhận thông tin</h2>
 
-          <dl class="info-list checkout-review-list">
+          <dl class="info-list checkout-review-list" id="confirm-single-list">
             <dt>Sản phẩm</dt>
             <dd id="confirm-product"></dd>
             <dt>Số lượng</dt>
@@ -213,6 +229,15 @@
             <dd id="confirm-artisan"></dd>
             <dt>Brief tùy biến</dt>
             <dd class="checkout-brief-text" id="confirm-brief"></dd>
+          </dl>
+
+          <div id="confirm-cart" hidden>
+            <p class="checkout-cart-heading">Sản phẩm trong giỏ</p>
+            <ul class="checkout-item-list" id="confirm-cart-list"></ul>
+            <p class="checkout-cart-count" id="confirm-cart-count"></p>
+          </div>
+
+          <dl class="info-list checkout-review-list">
             <dt>Người nhận</dt>
             <dd id="confirm-delivery"></dd>
             <dt>Thanh toán</dt>
@@ -241,13 +266,22 @@
           <h2 class="panel-title" id="complete-title">Đã ghi nhận xác nhận trên trình duyệt</h2>
           <p class="checkout-complete-code">Mã tham chiếu demo: <strong id="demo-code"></strong></p>
 
-          <dl class="info-list checkout-review-list">
+          <dl class="info-list checkout-review-list" id="complete-single-list">
             <dt>Sản phẩm</dt>
             <dd id="complete-product"></dd>
             <dt>Nghệ nhân</dt>
             <dd id="complete-artisan"></dd>
             <dt>Số lượng</dt>
             <dd id="complete-qty"></dd>
+          </dl>
+
+          <div id="complete-cart" hidden>
+            <p class="checkout-cart-heading">Sản phẩm trong giỏ</p>
+            <ul class="checkout-item-list" id="complete-cart-list"></ul>
+            <p class="checkout-cart-count" id="complete-cart-count"></p>
+          </div>
+
+          <dl class="info-list checkout-review-list">
             <dt>Người nhận</dt>
             <dd id="complete-delivery"></dd>
             <dt>Thanh toán</dt>
@@ -257,6 +291,8 @@
             <dt>Tạm tính</dt>
             <dd id="complete-total"></dd>
           </dl>
+
+          <p class="checkout-honest-note" id="complete-cart-note" hidden>Bản demo không tạo đơn hàng thật nên giỏ hàng của bạn vẫn được giữ nguyên.</p>
 
           <div class="demo-warning" role="note">
             Chưa có đơn hàng nào được gửi đến nghệ nhân hoặc lưu trên máy chủ. Không có giao dịch thanh toán nào
@@ -273,7 +309,7 @@
 
       <aside class="panel checkout-summary" id="checkout-summary" aria-label="Tóm tắt đơn tùy biến">
         <h2 class="panel-title">Tóm tắt đơn</h2>
-        <dl class="summary-list">
+        <dl class="summary-list" id="summary-single">
           <dt>Sản phẩm</dt>
           <dd id="summary-product"></dd>
           <dt>Nghệ nhân</dt>
@@ -282,6 +318,15 @@
           <dd id="summary-qty"></dd>
           <dt>Đơn giá tham khảo</dt>
           <dd id="summary-unit-price"></dd>
+        </dl>
+
+        <div id="summary-cart" hidden>
+          <p class="summary-cart-heading">Sản phẩm trong giỏ</p>
+          <ul class="summary-cart-list" id="summary-cart-list"></ul>
+          <p class="summary-cart-count" id="summary-cart-count"></p>
+        </div>
+
+        <dl class="summary-list">
           <dt>Thanh toán</dt>
           <dd id="summary-payment">Chưa chọn</dd>
           <dt>Giao hàng</dt>
@@ -306,8 +351,28 @@
         <a href="index.html" class="btn-primary">Về danh mục sản phẩm</a>
         <a href="customize.html" class="btn-light" id="checkout-empty-customize" hidden>Tạo yêu cầu tùy biến</a>
         <a href="artisan-suggestions.html" class="btn-outline" id="checkout-empty-artisan" hidden>Chọn nghệ nhân</a>
+        <a href="cart.html" class="btn-light" id="checkout-empty-cart" hidden>Về giỏ hàng</a>
       </div>
     </div>
+
+    <template id="checkout-cart-item-template">
+      <li class="checkout-item">
+        <img src="" alt="">
+        <div class="checkout-item-body">
+          <p class="checkout-item-name"></p>
+          <p class="checkout-item-meta"></p>
+          <p class="checkout-item-price"></p>
+        </div>
+        <p class="checkout-item-subtotal"></p>
+      </li>
+    </template>
+
+    <template id="checkout-summary-item-template">
+      <li class="summary-cart-item">
+        <span class="summary-cart-item-name"></span>
+        <span class="summary-cart-item-meta"></span>
+      </li>
+    </template>
 
   </main>
 

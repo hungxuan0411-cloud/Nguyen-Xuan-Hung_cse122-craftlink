@@ -1,18 +1,22 @@
 /* ==========================================================================
-   checkout.js — Trang xác nhận đơn tùy biến (checkout.html)
+   checkout.js — Trang xác nhận đơn (checkout.html)
    --------------------------------------------------------------------------
-   Trang này chỉ xử lý MỘT sản phẩm đang tùy biến. Dữ liệu được đọc từ
-   sessionStorage (khóa craftlink_checkout_draft) nên:
-   - Quay lại / tải lại trang trong cùng tab vẫn giữ thông tin.
-   - Đóng tab là mất toàn bộ bản nháp.
-   - Không gửi dữ liệu ra máy chủ và không thực hiện thanh toán thật.
+   Trang có HAI chế độ nhưng dùng chung 4 bước:
+     - Mặc định: một sản phẩm đang tùy biến (đọc bản nháp
+       craftlink_checkout_draft trong sessionStorage).
+     - ?mode=cart: nhiều sản phẩm lấy từ giỏ hàng (đọc bản nháp
+       craftlink_cart_checkout_draft trong sessionStorage).
 
-   Trang gồm 4 bước:
-     1. Xem lại sản phẩm, số lượng, brief, nghệ nhân, tạm tính
+   Cả hai chế độ đều:
+     - Không gửi dữ liệu ra máy chủ và không thực hiện thanh toán thật.
+     - Mất bản nháp khi đóng tab.
+     - Chỉ hiện trạng thái hoàn tất của bản demo sau khi bấm xác nhận.
+
+   Bốn bước:
+     1. Xem lại sản phẩm / danh sách sản phẩm trong giỏ
      2. Nhập số điện thoại + địa chỉ nhận hàng (kiểm tra ngay trên trang)
      3. Chọn phương thức thanh toán + giao hàng (bắt buộc)
      4. Xác nhận lại toàn bộ thông tin
-   Sau khi bấm xác nhận, trang chỉ hiện trạng thái hoàn tất của bản demo.
    ========================================================================== */
 
 (function () {
@@ -20,6 +24,8 @@
   if (!layout) {
     return; // không phải trang checkout
   }
+
+  const isCartMode = getQueryParam("mode") === "cart";
 
   const stepsEl = document.getElementById("checkout-steps");
   const stepPanels = Array.from(document.querySelectorAll(".checkout-step-panel"));
@@ -29,8 +35,23 @@
   const emptyText = document.getElementById("checkout-empty-text");
   const emptyCustomize = document.getElementById("checkout-empty-customize");
   const emptyArtisan = document.getElementById("checkout-empty-artisan");
+  const emptyCart = document.getElementById("checkout-empty-cart");
   const summaryEl = document.getElementById("checkout-summary");
   const completePanel = document.getElementById("checkout-complete");
+
+  const reviewSingle = document.getElementById("review-single");
+  const reviewCart = document.getElementById("review-cart");
+  const summarySingle = document.getElementById("summary-single");
+  const summaryCart = document.getElementById("summary-cart");
+  const confirmSingleList = document.getElementById("confirm-single-list");
+  const confirmCart = document.getElementById("confirm-cart");
+  const completeSingleList = document.getElementById("complete-single-list");
+  const completeCart = document.getElementById("complete-cart");
+  const completeCartNote = document.getElementById("complete-cart-note");
+  const reviewBackCart = document.getElementById("review-back-cart");
+  const step1Title = document.getElementById("step1-title");
+  const cartItemTemplate = document.getElementById("checkout-cart-item-template");
+  const summaryItemTemplate = document.getElementById("checkout-summary-item-template");
 
   const deliveryForm = document.getElementById("delivery-form");
   const phoneInput = document.getElementById("delivery-phone");
@@ -42,9 +63,60 @@
   const paymentError = document.getElementById("payment-error");
   const shippingError = document.getElementById("shipping-error");
 
-  let draft = readCheckoutDraft();
-  let product = draft ? findProduct(draft.productId) : null;
-  let artisan = draft ? findArtisanById(draft.artisanId) : null;
+  // Đọc đúng loại bản nháp theo chế độ đang mở.
+  let draft = isCartMode ? readCartCheckoutDraft() : readCheckoutDraft();
+
+  // Giỏ hàng có thể đã thay đổi sau khi bản nháp được tạo. Nếu khác với
+  // "ảnh chụp" cũ thì bỏ bản nháp để bắt đầu lại từ giỏ hiện tại.
+  if (isCartMode && draft && draft.status !== "completed" && !cartDraftMatchesCurrentCart(draft)) {
+    draft = null;
+  }
+  if (isCartMode && !draft) {
+    draft = startCartCheckoutDraft();
+  }
+
+  let product = !isCartMode && draft ? findProduct(draft.productId) : null;
+  let artisan = !isCartMode && draft ? findArtisanById(draft.artisanId) : null;
+
+  // Mỗi dòng trong giỏ được ghép với dữ liệu sản phẩm để lấy tên, ảnh, giá.
+  const cartLines = isCartMode && draft
+    ? draft.items.map(function (item) {
+        return { product: findProduct(item.id), qty: item.qty };
+      }).filter(function (line) {
+        return Boolean(line.product);
+      })
+    : [];
+
+  function cartDraftMatchesCurrentCart(cartDraft) {
+    const cart = readCart();
+    if (cartDraft.items.length !== cart.length) {
+      return false;
+    }
+    return cartDraft.items.every(function (item) {
+      const current = cart.find(function (entry) {
+        return entry.id === item.id;
+      });
+      return current && current.qty === item.qty;
+    });
+  }
+
+  // Chọn đúng khóa sessionStorage tương ứng với chế độ hiện tại.
+  function saveDraft(patch) {
+    draft = (isCartMode ? updateCartCheckoutDraft(patch) : updateCheckoutDraft(patch)) || draft;
+    return draft;
+  }
+
+  function replaceDraft(next) {
+    return isCartMode ? writeCartCheckoutDraft(next) : writeCheckoutDraft(next);
+  }
+
+  function clearDraft() {
+    if (isCartMode) {
+      clearCartCheckoutDraft();
+    } else {
+      clearCheckoutDraft();
+    }
+  }
 
   function setError(errorEl, input, message) {
     errorEl.textContent = message;
@@ -52,7 +124,7 @@
     input.setAttribute("aria-invalid", message === "" ? "false" : "true");
   }
 
-  function showEmpty(title, text, showCustomize, showArtisan) {
+  function showEmpty(title, text, showCustomize, showArtisan, showCart) {
     layout.hidden = true;
     stepsEl.hidden = true;
     emptyState.hidden = false;
@@ -60,17 +132,81 @@
     emptyText.textContent = text;
     emptyCustomize.hidden = !showCustomize;
     emptyArtisan.hidden = !showArtisan;
+    emptyCart.hidden = !showCart;
+  }
+
+  function getCartTotalQty() {
+    return cartLines.reduce(function (total, line) {
+      return total + line.qty;
+    }, 0);
+  }
+
+  function getCartCountText() {
+    return cartLines.length + " sản phẩm (tổng " + getCartTotalQty() + " món)";
   }
 
   function getTotal() {
+    if (isCartMode) {
+      return cartLines.reduce(function (total, line) {
+        return total + line.product.price * line.qty;
+      }, 0);
+    }
     return product.price * draft.qty;
   }
 
+  // Vẽ danh sách sản phẩm trong giỏ vào một khung bất kỳ
+  // (bước 1, bước 4 hoặc trang hoàn tất).
+  function renderCartItems(containerId) {
+    const container = document.getElementById(containerId);
+    container.textContent = ""; // xóa các dòng cũ trước khi vẽ lại
+
+    cartLines.forEach(function (line) {
+      const row = cartItemTemplate.content.firstElementChild.cloneNode(true);
+      const img = row.querySelector("img");
+      img.src = line.product.image;
+      img.alt = line.product.name;
+
+      row.querySelector(".checkout-item-name").textContent = line.product.name;
+      row.querySelector(".checkout-item-meta").textContent = "Nghệ nhân " + line.product.artisan;
+      row.querySelector(".checkout-item-price").textContent =
+        line.qty + " × " + formatPrice(line.product.price);
+      row.querySelector(".checkout-item-subtotal").textContent =
+        formatPrice(line.product.price * line.qty);
+
+      container.appendChild(row);
+    });
+  }
+
+  function renderSummaryCart() {
+    const list = document.getElementById("summary-cart-list");
+    list.textContent = "";
+
+    cartLines.forEach(function (line) {
+      const row = summaryItemTemplate.content.firstElementChild.cloneNode(true);
+      row.querySelector(".summary-cart-item-name").textContent = line.product.name;
+      row.querySelector(".summary-cart-item-meta").textContent =
+        line.qty + " × " + formatPrice(line.product.price);
+      list.appendChild(row);
+    });
+
+    document.getElementById("summary-cart-count").textContent =
+      "Tổng số lượng: " + getCartTotalQty() + " món";
+  }
+
   function renderSummary() {
-    document.getElementById("summary-product").textContent = product.name;
-    document.getElementById("summary-artisan").textContent = artisan.name;
-    document.getElementById("summary-qty").textContent = draft.qty;
-    document.getElementById("summary-unit-price").textContent = formatPrice(product.price);
+    if (isCartMode) {
+      summarySingle.hidden = true;
+      summaryCart.hidden = false;
+      renderSummaryCart();
+    } else {
+      summarySingle.hidden = false;
+      summaryCart.hidden = true;
+      document.getElementById("summary-product").textContent = product.name;
+      document.getElementById("summary-artisan").textContent = artisan.name;
+      document.getElementById("summary-qty").textContent = draft.qty;
+      document.getElementById("summary-unit-price").textContent = formatPrice(product.price);
+    }
+
     document.getElementById("summary-payment").textContent =
       PAYMENT_LABELS[draft.payment] || "Chưa chọn";
     document.getElementById("summary-shipping-method").textContent =
@@ -93,6 +229,13 @@
   }
 
   function fillReviewStep() {
+    if (isCartMode) {
+      renderCartItems("review-cart-list");
+      document.getElementById("review-cart-count").textContent = getCartCountText();
+      document.getElementById("review-cart-total").textContent = formatPrice(getTotal());
+      return;
+    }
+
     const reviewImage = document.getElementById("review-product-image");
     reviewImage.src = product.image;
     reviewImage.alt = product.name;
@@ -133,11 +276,17 @@
   }
 
   function fillConfirmStep() {
-    document.getElementById("confirm-product").textContent =
-      product.name + " • " + formatPrice(product.price) + " / sản phẩm";
-    document.getElementById("confirm-qty").textContent = draft.qty;
-    document.getElementById("confirm-artisan").textContent = artisan.name;
-    document.getElementById("confirm-brief").textContent = draft.brief;
+    if (isCartMode) {
+      renderCartItems("confirm-cart-list");
+      document.getElementById("confirm-cart-count").textContent = getCartCountText();
+    } else {
+      document.getElementById("confirm-product").textContent =
+        product.name + " • " + formatPrice(product.price) + " / sản phẩm";
+      document.getElementById("confirm-qty").textContent = draft.qty;
+      document.getElementById("confirm-artisan").textContent = artisan.name;
+      document.getElementById("confirm-brief").textContent = draft.brief;
+    }
+
     document.getElementById("confirm-delivery").textContent =
       draft.delivery.phone + " — " + draft.delivery.address;
     document.getElementById("confirm-payment").textContent =
@@ -173,11 +322,17 @@
       item.removeAttribute("aria-current");
     });
 
+    if (isCartMode) {
+      renderCartItems("complete-cart-list");
+      document.getElementById("complete-cart-count").textContent = getCartCountText();
+    } else {
+      document.getElementById("complete-product").textContent =
+        product.name + " • " + formatPrice(product.price) + " / sản phẩm";
+      document.getElementById("complete-artisan").textContent = artisan.name;
+      document.getElementById("complete-qty").textContent = draft.qty;
+    }
+
     document.getElementById("demo-code").textContent = draft.demoCode || "Chưa có mã";
-    document.getElementById("complete-product").textContent =
-      product.name + " • " + formatPrice(product.price) + " / sản phẩm";
-    document.getElementById("complete-artisan").textContent = artisan.name;
-    document.getElementById("complete-qty").textContent = draft.qty;
     document.getElementById("complete-delivery").textContent =
       draft.delivery.phone + " — " + draft.delivery.address;
     document.getElementById("complete-payment").textContent =
@@ -186,6 +341,42 @@
       SHIPPING_LABELS[draft.shipping] || "Chưa chọn";
     document.getElementById("complete-total").textContent =
       formatPrice(getTotal()) + " (chưa gồm phí giao hàng)";
+  }
+
+  // Đổi tiêu đề, breadcrumb và các khối hiển thị khi mở bằng ?mode=cart.
+  function applyModeChrome() {
+    if (!isCartMode) {
+      return;
+    }
+
+    document.title = "Xác nhận đơn hàng | CraftLink";
+    document.getElementById("page-title").textContent = "Xác nhận đơn hàng";
+    document.getElementById("checkout-page-subtitle").textContent =
+      "Xem lại sản phẩm trong giỏ, nhập thông tin nhận hàng và chọn phương thức thanh toán, giao hàng.";
+
+    const breadcrumbMode = document.getElementById("checkout-breadcrumb-mode");
+    breadcrumbMode.textContent = "Giỏ hàng";
+    breadcrumbMode.href = "cart.html";
+    document.getElementById("checkout-breadcrumb-current").textContent = "Xác nhận đơn";
+
+    step1Title.textContent = "1. Xem lại sản phẩm trong giỏ";
+    summaryEl.setAttribute("aria-label", "Tóm tắt đơn hàng");
+
+    reviewSingle.hidden = true;
+    reviewCart.hidden = false;
+    summarySingle.hidden = true;
+    summaryCart.hidden = false;
+    confirmSingleList.hidden = true;
+    confirmCart.hidden = false;
+    completeSingleList.hidden = true;
+    completeCart.hidden = false;
+    completeCartNote.hidden = false;
+
+    document.getElementById("review-edit-brief").hidden = true;
+    document.getElementById("review-change-artisan").hidden = true;
+    reviewBackCart.hidden = false;
+
+    document.getElementById("restart-btn").textContent = "Quay lại giỏ hàng";
   }
 
   // Nếu người dùng tải lại ở bước 3/4 nhưng thiếu dữ liệu, đưa về bước
@@ -202,7 +393,7 @@
 
   function renderStep(requestedStep, shouldFocus) {
     const step = getSafeStep(requestedStep);
-    draft = updateCheckoutDraft({ checkoutStep: step }) || draft;
+    saveDraft({ checkoutStep: step });
 
     stepPanels.forEach(function (panel) {
       panel.hidden = Number(panel.dataset.step) !== step;
@@ -278,9 +469,7 @@
       return;
     }
 
-    draft = updateCheckoutDraft({
-      delivery: { phone: phone, address: address }
-    }) || draft;
+    saveDraft({ delivery: { phone: phone, address: address } });
     renderStep(3, true);
   }
 
@@ -311,19 +500,31 @@
       return;
     }
 
-    draft = updateCheckoutDraft({
+    saveDraft({
       payment: payment.value,
       shipping: shipping.value
-    }) || draft;
+    });
     renderStep(4, true);
   }
 
   function handleConfirm() {
     // Kiểm tra lần cuối trước khi hiện trạng thái hoàn tất của bản demo.
-    if (!draft.brief || draft.acceptedBrief !== draft.brief) {
+    if (isCartMode) {
+      if (!draft || cartLines.length === 0) {
+        showEmpty(
+          "Giỏ hàng đang trống",
+          "Hãy thêm sản phẩm vào giỏ trước khi xác nhận đơn hàng.",
+          false,
+          false,
+          true
+        );
+        return;
+      }
+    } else if (!draft.brief || draft.acceptedBrief !== draft.brief) {
       window.location.href = "customize.html";
       return;
     }
+
     if (!draft.delivery.phone || !draft.delivery.address) {
       renderStep(2, true);
       return;
@@ -334,7 +535,7 @@
     }
 
     const now = new Date();
-    draft = writeCheckoutDraft(Object.assign({}, draft, {
+    draft = replaceDraft(Object.assign({}, draft, {
       status: "completed",
       demoCode: "CL-DEMO-" + now.getTime().toString(36).toUpperCase(),
       confirmedAt: now.toISOString()
@@ -348,43 +549,63 @@
     showToast("Đã ghi nhận xác nhận trên trình duyệt (bản demo, chưa gửi đơn).");
   }
 
-  // Chưa có bản nháp hoặc sản phẩm không còn trong dữ liệu mẫu.
-  if (!draft || !product) {
-    showEmpty(
-      "Chưa có yêu cầu tùy biến",
-      "Hãy chọn một sản phẩm và tạo brief trước khi xác nhận đơn.",
-      true,
-      false
-    );
-    return;
-  }
+  // Áp dụng giao diện của chế độ trước khi kiểm tra dữ liệu, để cả trang
+  // thông báo giỏ trống cũng có tiêu đề/breadcrumb đúng.
+  applyModeChrome();
 
-  // Bắt buộc phải chấp nhận brief trước khi sang checkout.
-  if (!draft.brief || draft.acceptedBrief !== draft.brief) {
-    showEmpty(
-      "Brief chưa được chấp nhận",
-      "Hãy quay lại trang tạo brief, tạo bản tóm tắt mới nhất và bấm “Chấp nhận”.",
-      true,
-      false
-    );
-    return;
-  }
+  if (isCartMode) {
+    if (!draft || cartLines.length === 0) {
+      showEmpty(
+        "Giỏ hàng đang trống",
+        "Hãy thêm sản phẩm vào giỏ trước khi xác nhận đơn hàng.",
+        false,
+        false,
+        true
+      );
+      return;
+    }
+  } else {
+    // Chưa có bản nháp hoặc sản phẩm không còn trong dữ liệu mẫu.
+    if (!draft || !product) {
+      showEmpty(
+        "Chưa có yêu cầu tùy biến",
+        "Hãy chọn một sản phẩm và tạo brief trước khi xác nhận đơn.",
+        true,
+        false
+      );
+      return;
+    }
 
-  // Bắt buộc phải chọn nghệ nhân.
-  if (!artisan) {
-    showEmpty(
-      "Chưa chọn nghệ nhân",
-      "Hãy quay lại trang gợi ý và chọn một nghệ nhân trước khi xác nhận đơn.",
-      false,
-      true
-    );
-    return;
+    // Bắt buộc phải chấp nhận brief trước khi sang checkout.
+    if (!draft.brief || draft.acceptedBrief !== draft.brief) {
+      showEmpty(
+        "Brief chưa được chấp nhận",
+        "Hãy quay lại trang tạo brief, tạo bản tóm tắt mới nhất và bấm “Chấp nhận”.",
+        true,
+        false
+      );
+      return;
+    }
+
+    // Bắt buộc phải chọn nghệ nhân.
+    if (!artisan) {
+      showEmpty(
+        "Chưa chọn nghệ nhân",
+        "Hãy quay lại trang gợi ý và chọn một nghệ nhân trước khi xác nhận đơn.",
+        false,
+        true
+      );
+      return;
+    }
   }
 
   stepsEl.hidden = false;
   emptyState.hidden = true;
-  document.getElementById("review-edit-brief").href = "customize.html";
-  document.getElementById("review-change-artisan").href = "artisan-suggestions.html";
+
+  if (!isCartMode) {
+    document.getElementById("review-edit-brief").href = "customize.html";
+    document.getElementById("review-change-artisan").href = "artisan-suggestions.html";
+  }
 
   document.getElementById("step1-next").addEventListener("click", function () {
     renderStep(2, true);
@@ -404,14 +625,14 @@
 
   // Lưu ngay khi gõ để quay lại bước trước hoặc tải lại vẫn còn dữ liệu.
   phoneInput.addEventListener("input", function () {
-    draft = updateCheckoutDraft({ delivery: { phone: phoneInput.value } }) || draft;
+    saveDraft({ delivery: { phone: phoneInput.value } });
     if (!phoneError.hidden) {
       setError(phoneError, phoneInput, "");
     }
   });
 
   addressInput.addEventListener("input", function () {
-    draft = updateCheckoutDraft({ delivery: { address: addressInput.value } }) || draft;
+    saveDraft({ delivery: { address: addressInput.value } });
     if (!addressError.hidden) {
       setError(addressError, addressInput, "");
     }
@@ -420,10 +641,10 @@
   optionsForm.addEventListener("change", function (event) {
     const input = event.target;
     if (input.name === "payment") {
-      draft = updateCheckoutDraft({ payment: input.value }) || draft;
+      saveDraft({ payment: input.value });
       paymentError.hidden = true;
     } else if (input.name === "shipping") {
-      draft = updateCheckoutDraft({ shipping: input.value }) || draft;
+      saveDraft({ shipping: input.value });
       shippingError.hidden = true;
     }
     renderSummary();
@@ -432,8 +653,8 @@
   document.getElementById("confirm-order-btn").addEventListener("click", handleConfirm);
 
   document.getElementById("restart-btn").addEventListener("click", function () {
-    clearCheckoutDraft();
-    window.location.href = "index.html";
+    clearDraft();
+    window.location.href = isCartMode ? "cart.html" : "index.html";
   });
 
   if (draft.status === "completed") {

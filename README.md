@@ -58,8 +58,6 @@ Cho phép người mua xem danh sách sản phẩm thủ công, tùy biến yêu
 ## Thiết kế Canva
 https://www.canva.com/design/DAHZAR9VxmU/dQQiBQ9-OPRH6Q5x8DdAkw/edit
 
-## GitHub
-https://github.com/hungxuan0411-cloud/Nguyen-Xuan-H-ung_CSE122_craftlink-presentation
 
 ## Video trình bày
 https://www.youtube.com/watch?v=3UAWNLqSxcY&list=PLK12prV3f_5A

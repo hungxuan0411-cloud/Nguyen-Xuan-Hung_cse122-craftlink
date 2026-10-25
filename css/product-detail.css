@@ -33,6 +33,12 @@
   margin-top: 10px;
 }
 
+/* Sản phẩm chỉ có 1 ảnh: JS ẩn dãy ảnh nhỏ, cần khai báo lại vì
+   quy tắc display: grid phía trên sẽ thắng thuộc tính hidden mặc định */
+.gallery-thumbs[hidden] {
+  display: none;
+}
+
 .thumb-btn {
   padding: 0;
   border: 2px solid transparent;
@@ -74,6 +80,13 @@
   font-size: 26px;
   font-weight: 700;
   color: var(--color-price);
+}
+
+/* Ghi chú nguồn giá — không cộng phụ phí khi dữ liệu chưa có quy tắc */
+.product-price-note {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 .product-specs h2,
@@ -157,6 +170,23 @@
   align-items: center;
   gap: 14px;
   margin-bottom: 12px;
+}
+
+/* Chữ cái đầu thay ảnh khi hồ sơ nghệ nhân chưa có ảnh đại diện */
+.artisan-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+/* Không có ảnh đại diện thì JS ẩn ảnh; .avatar không đặt display nên
+   quy tắc riêng dưới đây chỉ để chắc chắn trạng thái hidden hoạt động */
+.artisan-initial[hidden] {
+  display: none;
 }
 
 .artisan-name {

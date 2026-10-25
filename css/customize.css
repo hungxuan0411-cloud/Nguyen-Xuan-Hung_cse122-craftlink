@@ -13,6 +13,71 @@
 
 /* ---------- Cột trái: form nhập yêu cầu ---------- */
 
+/* Thẻ sản phẩm đang tùy biến — giữ ngữ cảnh khi người dùng chuyển bước */
+.customize-product {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  background-color: #fdfaf5;
+}
+
+.customize-product img {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.customize-product-info {
+  min-width: 0;
+}
+
+.customize-product-label {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.customize-product-name {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.customize-product-meta {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.customize-qty-group .quantity-stepper {
+  width: fit-content;
+}
+
+.customize-qty-note {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+/* Ghi chú minh bạch về cách tạo bản tóm tắt cục bộ */
+.local-note {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-btn);
+  background-color: #fdfaf5;
+  color: #6b6055;
+  font-size: 13px;
+}
+
 .field-group {
   margin-bottom: 22px;
 }
@@ -75,6 +140,11 @@
 
 .brief-actions {
   margin-top: 22px;
+}
+
+/* Khung kết quả có display riêng qua .panel nên cần khai báo hidden rõ ràng */
+.customize-result-panel[hidden] {
+  display: none;
 }
 
 

@@ -1427,7 +1427,11 @@ function aiCreateProductCard(entry) {
   const nameLink = card.querySelector(".ai-product-name");
   const detailLink = card.querySelector(".ai-detail-btn");
 
+  const detailUrl = "product-detail.html?id=" + encodeURIComponent(product.id);
+  mediaLink.href = detailUrl;
   mediaLink.setAttribute("aria-label", "Xem chi tiết " + product.name);
+  nameLink.href = detailUrl;
+  detailLink.href = detailUrl;
   image.src = product.image;
   image.alt = product.name;
 

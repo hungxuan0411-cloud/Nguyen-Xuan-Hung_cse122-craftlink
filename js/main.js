@@ -40,8 +40,10 @@ const FAVORITES_KEY = "craftlink_favorites";
 // Khóa lưu BẢN NHÁP do người dùng tạo (brief ở trang tùy biến,
 // yêu cầu chỉnh sửa ở trang chi tiết đơn). Đây là dữ liệu của RIÊNG
 // trình duyệt này — dự án chưa có máy chủ để gửi đi cho nghệ nhân.
-const BRIEF_DRAFT_KEY = "craftlink_brief_draft";
+// Bản nháp chỉnh sửa đơn dùng localStorage; riêng luồng mua hàng dùng
+// sessionStorage để thông tin nhận hàng tự mất khi đóng tab.
 const REVISION_DRAFT_KEY = "craftlink_revision_draft";
+const CHECKOUT_DRAFT_KEY = "craftlink_checkout_draft";
 
 // Số lượng tối đa cho một sản phẩm trong giỏ
 const MAX_QTY = 99;
@@ -71,6 +73,225 @@ const priceFormatter = new Intl.NumberFormat("vi-VN");
 
 function formatPrice(number) {
   return priceFormatter.format(number) + "₫";
+}
+
+// Nhãn hiển thị tương ứng với mã đang lưu trong data.js.
+// Chỉ dùng để dịch mã kỹ thuật sang tiếng Việt, không tạo thêm dữ liệu.
+const STYLE_LABELS = {
+  "toi-gian": "Tối giản",
+  "moc-mac": "Mộc mạc",
+  "hien-dai": "Hiện đại",
+  "truyen-thong": "Truyền thống"
+};
+
+const CATEGORY_LABELS = {
+  "do-gom": "Đồ gốm",
+  "do-trang-tri": "Đồ trang trí",
+  "do-dung-nha-bep": "Đồ dùng nhà bếp",
+  "phu-kien": "Phụ kiện",
+  "qua-tang": "Quà tặng"
+};
+
+const LEAD_TIME_LABELS = {
+  "1-3": "1 – 3 ngày",
+  "4-7": "4 – 7 ngày",
+  "8-14": "8 – 14 ngày",
+  "tren-14": "Trên 14 ngày"
+};
+
+const PAYMENT_LABELS = {
+  "cod": "Thanh toán khi nhận hàng (COD)",
+  "bank-transfer": "Chuyển khoản ngân hàng"
+};
+
+const SHIPPING_LABELS = {
+  "standard": "Giao hàng tiêu chuẩn",
+  "express": "Giao hàng nhanh"
+};
+
+/* ---------- 2b. Địa chỉ trang và bản nháp luồng mua hàng ---------- */
+
+// Đọc một tham số trên URL, ví dụ ?id=coc-gom-la-nau&qty=2
+function getQueryParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+function buildProductDetailUrl(productId) {
+  return "product-detail.html?id=" + encodeURIComponent(productId);
+}
+
+function buildCustomizeUrl(productId, qty) {
+  return "customize.html?id=" + encodeURIComponent(productId) + "&qty=" + encodeURIComponent(qty);
+}
+
+function findArtisanById(artisanId) {
+  return CRAFTLINK_ARTISANS.find(function (artisan) {
+    return artisan.id === artisanId;
+  });
+}
+
+// Tên nghệ nhân trong CRAFTLINK_PRODUCTS và tên trong CRAFTLINK_ARTISANS
+// được nối với nhau bằng tên hiển thị (kèm alias nếu có).
+function findArtisanByName(name) {
+  const normalized = normalizeText(name || "");
+  return CRAFTLINK_ARTISANS.find(function (artisan) {
+    const names = [artisan.name].concat(artisan.aliases || []);
+    return names.some(function (item) {
+      return normalizeText(item) === normalized;
+    });
+  });
+}
+
+// Sản phẩm đang xem ở product-detail.html. Nếu URL thiếu ?id thì giữ
+// đúng sản phẩm mẫu cũ (Cốc gốm lá nâu) để không làm hỏng trang hiện tại.
+let cachedDetailProduct;
+function getDetailProduct() {
+  if (cachedDetailProduct !== undefined) {
+    return cachedDetailProduct;
+  }
+
+  const id = getQueryParam("id");
+  if (id) {
+    const product = findProduct(id);
+    if (product) {
+      cachedDetailProduct = product;
+      return product;
+    }
+    showToast("Không tìm thấy sản phẩm trong dữ liệu mẫu; đang hiển thị Cốc gốm lá nâu.");
+  }
+
+  cachedDetailProduct = findProduct(DETAIL_PRODUCT_ID);
+  return cachedDetailProduct;
+}
+
+// Làm sạch bản nháp mua hàng trước khi dùng. Chỉ nhận sản phẩm có thật
+// trong data.js và số lượng là số nguyên từ 1 đến MAX_QTY.
+function normalizeCheckoutDraft(draft) {
+  if (!draft || typeof draft !== "object") {
+    return null;
+  }
+
+  const product = findProduct(draft.productId);
+  if (!product) {
+    return null;
+  }
+
+  const qtyNumber = Number(draft.qty);
+  const qty = Number.isInteger(qtyNumber) && qtyNumber >= 1
+    ? Math.min(qtyNumber, MAX_QTY)
+    : 1;
+
+  const stepNumber = Number(draft.checkoutStep);
+  const checkoutStep = Number.isInteger(stepNumber) && stepNumber >= 1 && stepNumber <= 4
+    ? stepNumber
+    : 1;
+
+  const delivery = draft.delivery && typeof draft.delivery === "object"
+    ? draft.delivery
+    : {};
+
+  const artisan = findArtisanById(draft.artisanId);
+
+  return {
+    productId: product.id,
+    qty: qty,
+    brief: typeof draft.brief === "string" ? draft.brief : "",
+    acceptedBrief: typeof draft.acceptedBrief === "string" ? draft.acceptedBrief : "",
+    artisanId: artisan ? artisan.id : null,
+    delivery: {
+      phone: typeof delivery.phone === "string" ? delivery.phone : "",
+      address: typeof delivery.address === "string" ? delivery.address : ""
+    },
+    payment: typeof draft.payment === "string" ? draft.payment : "",
+    shipping: typeof draft.shipping === "string" ? draft.shipping : "",
+    checkoutStep: checkoutStep,
+    status: draft.status === "completed" ? "completed" : "editing",
+    demoCode: typeof draft.demoCode === "string" ? draft.demoCode : "",
+    confirmedAt: typeof draft.confirmedAt === "string" ? draft.confirmedAt : "",
+    updatedAt: Date.now()
+  };
+}
+
+function readCheckoutDraft() {
+  const raw = sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
+  if (raw === null) {
+    return null;
+  }
+
+  try {
+    const draft = normalizeCheckoutDraft(JSON.parse(raw));
+    if (!draft) {
+      sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+    }
+    return draft;
+  } catch (error) {
+    sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+    return null;
+  }
+}
+
+function writeCheckoutDraft(draft) {
+  const normalized = normalizeCheckoutDraft(draft);
+  if (!normalized) {
+    sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+    return null;
+  }
+
+  sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(normalized));
+  return normalized;
+}
+
+// Cập nhật một phần bản nháp, giữ nguyên các trường còn lại.
+function updateCheckoutDraft(patch) {
+  const current = readCheckoutDraft();
+  if (!current || !patch) {
+    return null;
+  }
+
+  const next = Object.assign({}, current, patch);
+  if (patch.delivery) {
+    next.delivery = Object.assign({}, current.delivery, patch.delivery);
+  }
+  return writeCheckoutDraft(next);
+}
+
+function clearCheckoutDraft() {
+  sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+}
+
+// Bắt đầu tùy biến một sản phẩm. Nếu đang dở cùng sản phẩm thì giữ lại
+// brief và thông tin nhận hàng; đổi sản phẩm thì làm mới để tránh lẫn dữ liệu.
+function startCheckoutDraft(productId, qty) {
+  const product = findProduct(productId);
+  if (!product) {
+    return null;
+  }
+
+  const existing = readCheckoutDraft();
+  const canReuse = existing &&
+    existing.productId === product.id &&
+    existing.status !== "completed";
+
+  const qtyNumber = Number(qty);
+  const safeQty = Number.isInteger(qtyNumber) && qtyNumber >= 1
+    ? Math.min(qtyNumber, MAX_QTY)
+    : 1;
+  const qtyChanged = canReuse && existing.qty !== safeQty;
+
+  return writeCheckoutDraft({
+    productId: product.id,
+    qty: safeQty,
+    brief: canReuse ? existing.brief : "",
+    acceptedBrief: canReuse && !qtyChanged ? existing.acceptedBrief : "",
+    artisanId: canReuse && !qtyChanged ? existing.artisanId : null,
+    delivery: canReuse ? existing.delivery : { phone: "", address: "" },
+    payment: canReuse ? existing.payment : "",
+    shipping: canReuse ? existing.shipping : "",
+    checkoutStep: 1,
+    status: "editing",
+    demoCode: "",
+    confirmedAt: ""
+  });
 }
 
 /* ---------- 3. Đọc / ghi localStorage có kiểm tra dữ liệu ---------- */
@@ -430,12 +651,223 @@ function initProductList() {
   applyCatalog(); // đồng bộ giao diện ngay khi mở trang
 }
 
+/* ---------- 6b. Nối liên kết sản phẩm ở trang danh sách ---------- */
+
+// Các thẻ sản phẩm tĩnh trong index.html đang trỏ chung tới
+// product-detail.html. Hàm này gắn đúng ?id và ?qty cho từng thẻ để
+// trang chi tiết và trang tạo brief biết người dùng chọn sản phẩm nào.
+function initProductLinks() {
+  const cards = document.querySelectorAll(".product-card[data-id]");
+
+  cards.forEach(function (card) {
+    const product = findProduct(card.dataset.id);
+    if (!product) {
+      return;
+    }
+
+    const detailUrl = buildProductDetailUrl(product.id);
+    const mediaLink = card.querySelector(".product-media");
+    const nameLink = card.querySelector(".product-name a");
+    const customizeLink = card.querySelector(".btn-customize");
+
+    if (mediaLink) {
+      mediaLink.href = detailUrl;
+    }
+    if (nameLink) {
+      nameLink.href = detailUrl;
+    }
+    if (customizeLink) {
+      customizeLink.href = buildCustomizeUrl(product.id, 1);
+      customizeLink.addEventListener("click", function () {
+        startCheckoutDraft(product.id, 1);
+      });
+    }
+  });
+}
+
 /* ---------- 7. Trang chi tiết sản phẩm (product-detail.html) ---------- */
 
 // Trang chi tiết trong thiết kế (P8) hiển thị một sản phẩm mẫu là Cốc gốm lá nâu.
 const DETAIL_PRODUCT_ID = "coc-gom-la-nau";
 
-// Nút tăng/giảm số lượng và nút "Thêm vào giỏ hàng".
+// Vẽ toàn bộ nội dung trang chi tiết từ đúng sản phẩm trên URL.
+// Các trường chưa có trong data.js luôn hiển thị "Chưa có thông tin".
+function renderProductDetail(product) {
+  document.title = product.name + " | CraftLink";
+
+  const breadcrumb = document.getElementById("product-breadcrumb-name");
+  if (breadcrumb) {
+    breadcrumb.textContent = product.name;
+  }
+
+  const mainImg = document.getElementById("gallery-main-img");
+  if (mainImg) {
+    mainImg.src = product.image;
+    mainImg.alt = product.name;
+  }
+
+  // Bộ ảnh: sản phẩm chỉ có 1 ảnh thì ẩn dãy ảnh nhỏ.
+  const thumbs = document.getElementById("gallery-thumbs");
+  if (thumbs) {
+    const images = Array.isArray(product.gallery) && product.gallery.length > 0
+      ? product.gallery
+      : [product.image];
+
+    thumbs.textContent = "";
+    images.forEach(function (src, index) {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      const image = document.createElement("img");
+
+      button.type = "button";
+      button.className = "thumb-btn" + (index === 0 ? " active" : "");
+      button.setAttribute("aria-label", "Xem ảnh " + (index + 1));
+      image.src = src;
+      image.alt = "";
+      button.appendChild(image);
+      item.appendChild(button);
+      thumbs.appendChild(item);
+    });
+
+    thumbs.hidden = images.length <= 1;
+  }
+
+  const title = document.getElementById("product-title");
+  if (title) {
+    title.textContent = product.name;
+  }
+
+  const subtitle = document.getElementById("product-subtitle");
+  if (subtitle) {
+    subtitle.textContent = product.subtitle || "Chưa có thông tin mô tả ngắn.";
+  }
+
+  const price = document.getElementById("product-price");
+  if (price) {
+    price.textContent = formatPrice(product.price);
+  }
+
+  const specs = document.getElementById("product-specs-list");
+  if (specs) {
+    specs.textContent = "";
+    const rows = Array.isArray(product.specs) && product.specs.length > 0
+      ? product.specs
+      : [{ label: "Tùy biến", value: "Chưa có thông tin" }];
+
+    rows.forEach(function (row) {
+      const dt = document.createElement("dt");
+      const dd = document.createElement("dd");
+      dt.textContent = row.label;
+      dd.textContent = row.value;
+      specs.appendChild(dt);
+      specs.appendChild(dd);
+    });
+  }
+
+  const description = document.getElementById("product-description-text");
+  if (description) {
+    description.textContent = product.description || "Chưa có thông tin mô tả cho sản phẩm này.";
+  }
+
+  const artisan = findArtisanByName(product.artisan);
+  const avatar = document.getElementById("detail-artisan-avatar");
+  const initial = document.getElementById("detail-artisan-initial");
+  if (avatar && initial) {
+    if (artisan && artisan.image) {
+      avatar.src = artisan.image;
+      avatar.alt = "Nghệ nhân " + product.artisan;
+      avatar.hidden = false;
+      initial.hidden = true;
+    } else {
+      avatar.removeAttribute("src");
+      avatar.hidden = true;
+      initial.textContent = product.artisan.charAt(0).toUpperCase();
+      initial.hidden = false;
+    }
+  }
+
+  const artisanName = document.getElementById("detail-artisan-name");
+  if (artisanName) {
+    artisanName.textContent = product.artisan;
+  }
+
+  const location = document.getElementById("detail-artisan-location");
+  if (location) {
+    location.textContent = artisan && artisan.location ? artisan.location : "Chưa có thông tin";
+  }
+
+  const rating = document.getElementById("detail-product-rating");
+  if (rating) {
+    rating.textContent = product.rating.toFixed(1);
+  }
+
+  const reviewCount = document.getElementById("detail-product-review-count");
+  if (reviewCount) {
+    reviewCount.textContent = "(" + product.reviewCount + " đánh giá)";
+  }
+
+  const productCount = document.getElementById("detail-artisan-product-count");
+  if (productCount) {
+    const count = CRAFTLINK_PRODUCTS.filter(function (item) {
+      return item.artisan === product.artisan;
+    }).length;
+    productCount.textContent = count + " sản phẩm mẫu trong dữ liệu";
+  }
+
+  // Đánh giá chi tiết hiện chỉ có cho sản phẩm Cốc gốm lá nâu.
+  const reviewList = document.getElementById("product-review-list");
+  const reviewsNote = document.getElementById("product-reviews-note");
+  if (reviewList && reviewsNote) {
+    reviewList.textContent = "";
+
+    if (Array.isArray(product.reviews) && product.reviews.length > 0) {
+      product.reviews.forEach(function (review) {
+        const item = document.createElement("li");
+        const head = document.createElement("p");
+        const name = document.createElement("strong");
+        const stars = document.createElement("span");
+        const starsEmpty = document.createElement("span");
+        const hidden = document.createElement("span");
+        const text = document.createElement("p");
+
+        item.className = "review-item";
+        head.className = "review-head";
+        name.textContent = review.name;
+        stars.className = "stars";
+        stars.setAttribute("aria-hidden", "true");
+        stars.textContent = "★".repeat(review.rating);
+        starsEmpty.className = "stars-empty";
+        starsEmpty.setAttribute("aria-hidden", "true");
+        starsEmpty.textContent = "★".repeat(Math.max(0, 5 - review.rating));
+        hidden.className = "visually-hidden";
+        hidden.textContent = review.rating + " trên 5 sao";
+        text.className = "review-text";
+        text.textContent = review.text;
+
+        head.appendChild(name);
+        head.appendChild(stars);
+        if (starsEmpty.textContent !== "") {
+          head.appendChild(starsEmpty);
+        }
+        head.appendChild(hidden);
+        item.appendChild(head);
+        item.appendChild(text);
+        reviewList.appendChild(item);
+      });
+
+      reviewList.hidden = false;
+      reviewsNote.hidden = true;
+    } else {
+      reviewList.hidden = true;
+      reviewsNote.hidden = false;
+      reviewsNote.textContent = "Chưa có nội dung đánh giá chi tiết cho sản phẩm này. " +
+        "Điểm trung bình hiện có: " + product.rating.toFixed(1) +
+        " (" + product.reviewCount + " đánh giá) theo dữ liệu mẫu.";
+    }
+  }
+}
+
+// Nút tăng/giảm số lượng, thêm vào giỏ và mở bước tạo brief.
 // Chỉ chạy khi trang hiện tại có nút thêm vào giỏ.
 function initProductDetail() {
   const addBtn = document.getElementById("add-to-cart-btn");
@@ -443,10 +875,21 @@ function initProductDetail() {
     return; // trang này không phải chi tiết sản phẩm
   }
 
-  const product = findProduct(DETAIL_PRODUCT_ID);
+  const product = getDetailProduct();
+  renderProductDetail(product);
+
   const qtyValue = document.getElementById("qty-value");
   const decreaseBtn = document.getElementById("qty-decrease");
   const increaseBtn = document.getElementById("qty-increase");
+  const briefLink = document.getElementById("detail-brief-link");
+
+  if (briefLink) {
+    briefLink.href = buildCustomizeUrl(product.id, 1);
+    // Ghi số lượng đang chọn vào bản nháp trước khi chuyển sang tạo brief.
+    briefLink.addEventListener("click", function () {
+      startCheckoutDraft(product.id, Number(qtyValue.textContent) || 1);
+    });
+  }
 
   // Số lượng hiển thị luôn nằm trong khoảng 1..MAX_QTY
   decreaseBtn.addEventListener("click", function () {
@@ -515,9 +958,14 @@ function initCartPage() {
 
       row.dataset.id = product.id; // dùng để biết đang thao tác với sản phẩm nào
 
+      const mediaLink = row.querySelector(".cart-item-media");
+      if (mediaLink) {
+        mediaLink.href = buildProductDetailUrl(product.id);
+      }
+
       const nameLink = row.querySelector(".cart-item-name a");
       nameLink.textContent = product.name; // textContent an toàn
-      nameLink.href = "product-detail.html";
+      nameLink.href = buildProductDetailUrl(product.id);
 
       const img = row.querySelector("img");
       img.src = product.image;
@@ -596,7 +1044,7 @@ function initFavoriteButton() {
     return; // trang này không phải chi tiết sản phẩm
   }
 
-  const product = findProduct(DETAIL_PRODUCT_ID);
+  const product = getDetailProduct();
 
   // Đồng bộ trạng thái nút với dữ liệu đang lưu. Thuộc tính aria-pressed
   // vừa giúp trình đọc màn hình biết trạng thái, vừa được CSS dùng để
@@ -647,7 +1095,7 @@ function initFavoritesPage() {
       card.dataset.id = product.id; // dùng khi bấm "Bỏ yêu thích"
 
       const mediaLink = card.querySelector(".product-media");
-      mediaLink.href = "product-detail.html";
+      mediaLink.href = buildProductDetailUrl(product.id);
 
       const img = card.querySelector("img");
       img.src = product.image;
@@ -655,7 +1103,15 @@ function initFavoritesPage() {
 
       const nameLink = card.querySelector(".product-name a");
       nameLink.textContent = product.name; // textContent an toàn
-      nameLink.href = "product-detail.html";
+      nameLink.href = buildProductDetailUrl(product.id);
+
+      const customizeLink = card.querySelector(".btn-customize");
+      if (customizeLink) {
+        customizeLink.href = buildCustomizeUrl(product.id, 1);
+        customizeLink.addEventListener("click", function () {
+          startCheckoutDraft(product.id, 1);
+        });
+      }
 
       card.querySelector(".product-artisan").textContent = product.artisan;
       card.querySelector(".product-price").textContent = formatPrice(product.price);
@@ -712,15 +1168,15 @@ function initProductGallery() {
     return; // trang này không phải chi tiết sản phẩm
   }
 
-  const buttons = Array.from(thumbs.querySelectorAll(".thumb-btn"));
-
-  // Ủy quyền sự kiện: một listener cho cả dãy ảnh nhỏ
+  // Ủy quyền sự kiện: một listener cho cả dãy ảnh nhỏ. Danh sách nút
+  // được đọc lại mỗi lần bấm vì trang chi tiết vẽ ảnh động theo sản phẩm.
   thumbs.addEventListener("click", function (event) {
     const button = event.target.closest(".thumb-btn");
     if (!button) {
       return;
     }
 
+    const buttons = Array.from(thumbs.querySelectorAll(".thumb-btn"));
     const thumbImg = button.querySelector("img");
     mainImg.src = thumbImg.src;
     mainImg.alt = "Ảnh sản phẩm " + (buttons.indexOf(button) + 1);
@@ -734,9 +1190,9 @@ function initProductGallery() {
 
 /* ---------- 11. Trang tạo brief (customize.html) ---------- */
 
-// Bàn giao diện AI tạo brief cho sản phẩm tùy biến.
-// LƯU Ý trung thực: dự án chưa có máy chủ AI thật, nên phần "phân tích"
-// ở đây chỉ là mô phỏng bằng setTimeout cho sinh động khi thuyết trình.
+// Trang tạo brief: gắn sản phẩm và số lượng đang chọn, tạo một bản
+// tóm tắt cục bộ từ chính nội dung người dùng nhập. Không gọi mô hình AI
+// và không tự thêm chất liệu, kích thước hay phụ phí khi chưa có dữ liệu.
 function initCustomizePage() {
   const form = document.getElementById("brief-form");
   const resultPanel = document.querySelector(".customize-result-panel");
@@ -753,14 +1209,71 @@ function initCustomizePage() {
   const rejectBtn = document.getElementById("reject-brief-btn");
   const regenerateBtn = document.getElementById("regenerate-brief-btn");
   const saveBtn = document.getElementById("save-brief-btn");
+  const acceptBtn = document.getElementById("accept-brief-btn");
+  const referenceInput = document.getElementById("reference-image");
+  const qtyValue = document.getElementById("customize-qty-value");
+  const productName = document.getElementById("customize-product-name");
+  const productMeta = document.getElementById("customize-product-meta");
+  const productImage = document.getElementById("customize-product-image");
+  const backLink = document.getElementById("customize-back-link");
+  const briefResult = document.getElementById("brief-result");
+  const explain = document.querySelector(".ai-explain");
 
-  // Các khối nội dung của "kết quả AI" — ẩn/hiện cùng nhau.
-  // Cả khung kết quả bên phải cũng chỉ xuất hiện khi AI đã "phân tích" xong,
-  // nên lúc mới mở trang không có khung rỗng.
+  const urlId = getQueryParam("id");
+  const urlProduct = urlId ? findProduct(urlId) : null;
+  const urlQty = Number(getQueryParam("qty"));
+  let draft = readCheckoutDraft();
+
+  // Không có bản nháp, đổi sản phẩm hoặc vừa hoàn tất đơn trước đó:
+  // bắt đầu một bản nháp mới. Nếu URL thiếu ?id thì dùng sản phẩm mẫu Cốc.
+  if (!draft || draft.status === "completed" || (urlProduct && draft.productId !== urlProduct.id)) {
+    const targetProduct = urlProduct || (draft ? findProduct(draft.productId) : findProduct(DETAIL_PRODUCT_ID));
+    if (!targetProduct) {
+      return;
+    }
+    const targetQty = urlProduct && Number.isInteger(urlQty) && urlQty >= 1
+      ? urlQty
+      : (draft ? draft.qty : 1);
+    draft = startCheckoutDraft(targetProduct.id, targetQty);
+    if (urlId && !urlProduct) {
+      showToast("Không tìm thấy sản phẩm trong dữ liệu mẫu; đang dùng sản phẩm mẫu Cốc gốm lá nâu.");
+    }
+  }
+
+  if (!draft) {
+    return;
+  }
+
+  const product = findProduct(draft.productId);
+  let qty = draft.qty;
+  let generated = false;
+  let analyzing = false; // chặn bấm chồng khi đang tạo tóm tắt
+
+  // Gắn thông tin sản phẩm vào cột nhập liệu để người dùng luôn biết
+  // mình đang tùy biến món nào và với mức giá nào.
+  if (productImage) {
+    productImage.src = product.image;
+    productImage.alt = product.name;
+  }
+  if (productName) {
+    productName.textContent = product.name;
+  }
+  if (productMeta) {
+    productMeta.textContent = product.artisan + " • " + formatPrice(product.price) + " / sản phẩm";
+  }
+  if (backLink) {
+    backLink.href = buildProductDetailUrl(product.id);
+  }
+
+  qtyValue.textContent = qty;
+  description.value = draft.brief;
+  charCount.textContent = description.value.length;
+
+  // Các khối nội dung của bản tóm tắt — ẩn/hiện cùng nhau.
   const resultParts = [
-    document.getElementById("brief-result"),
+    briefResult,
     document.querySelector(".brief-section-title"),
-    document.querySelector(".ai-explain"),
+    explain,
     document.querySelector(".brief-actions")
   ].filter(function (part) {
     return part !== null; // chỉ giữ phần tử thực sự có trên trang
@@ -772,83 +1285,200 @@ function initCustomizePage() {
     });
   }
 
-  // Trạng thái ban đầu: chưa có kết quả nên ẩn cả khung bên phải,
-  // chưa hiện cảnh báo nhập liệu.
   status.hidden = true;
   note.hidden = true;
   resultPanel.hidden = true;
 
-  // Đếm ký tự đang gõ để người dùng biết còn bao nhiêu chỗ (maxlength 1000)
+  function clearAcceptance() {
+    if (draft.acceptedBrief || draft.artisanId) {
+      draft = updateCheckoutDraft({ acceptedBrief: "", artisanId: null }) || draft;
+    }
+  }
+
+  function hideStaleResult() {
+    if (!resultPanel.hidden) {
+      resultPanel.hidden = true;
+      generated = false;
+    }
+    clearAcceptance();
+  }
+
+  // Đếm ký tự và lưu tạm nội dung vào sessionStorage để quay lại
+  // hoặc tải lại trang vẫn còn nội dung đang viết.
   description.addEventListener("input", function () {
     charCount.textContent = description.value.length;
+    draft = updateCheckoutDraft({ brief: description.value }) || draft;
+    hideStaleResult();
   });
 
-  let analyzing = false; // chặn bấm chồng khi đang "phân tích"
+  if (referenceInput) {
+    referenceInput.addEventListener("change", function () {
+      hideStaleResult();
+      if (referenceInput.files.length > 0) {
+        showToast("Đã chọn ảnh tham khảo trên thiết bị; bản demo không tải ảnh lên máy chủ.");
+      }
+    });
+  }
 
-  // Mô phỏng quá trình AI phân tích: hiện trạng thái chờ ~1,2 giây
-  // rồi hiện lại khối kết quả và báo xong.
-  function runAnalysis(doneMessage) {
+  function changeQty(nextQty) {
+    const safeQty = Math.min(Math.max(1, nextQty), MAX_QTY);
+    if (safeQty === qty) {
+      return;
+    }
+
+    qty = safeQty;
+    qtyValue.textContent = qty;
+    draft = updateCheckoutDraft({ qty: qty }) || draft;
+    hideStaleResult();
+    showToast("Đã đổi số lượng. Hãy tạo lại bản tóm tắt trước khi chấp nhận.");
+  }
+
+  document.getElementById("customize-qty-decrease").addEventListener("click", function () {
+    changeQty(qty - 1);
+  });
+
+  document.getElementById("customize-qty-increase").addEventListener("click", function () {
+    changeQty(qty + 1);
+  });
+
+  // Bản tóm tắt chỉ ghép những gì có thật: nội dung người dùng nhập
+  // và các trường đã có trong data.js. Không suy đoán thêm.
+  function buildSummary() {
+    const styleLabels = (product.styles || []).map(function (style) {
+      return STYLE_LABELS[style] || style;
+    });
+    const referenceText = referenceInput && referenceInput.files.length > 0
+      ? "Đã chọn 1 ảnh trên thiết bị (bản demo chưa tải hoặc lưu ảnh)."
+      : "Không có";
+
+    const rows = [
+      ["Sản phẩm", product.name],
+      ["Số lượng", String(qty)],
+      ["Mô tả của bạn", description.value.trim()],
+      ["Phong cách trong dữ liệu mẫu", styleLabels.length > 0 ? styleLabels.join(", ") : "Chưa có thông tin"],
+      ["Thời gian hoàn thành dự kiến", LEAD_TIME_LABELS[product.leadTime] || "Chưa có thông tin"],
+      ["Đơn giá tham khảo", formatPrice(product.price)],
+      ["Tạm tính", formatPrice(product.price * qty) + " (chưa gồm phí tùy biến hoặc giao hàng)"],
+      ["Ảnh tham khảo", referenceText]
+    ];
+
+    briefResult.textContent = "";
+    rows.forEach(function (row) {
+      const dt = document.createElement("dt");
+      const dd = document.createElement("dd");
+      dt.textContent = row[0];
+      dd.textContent = row[1];
+      briefResult.appendChild(dt);
+      briefResult.appendChild(dd);
+    });
+
+    if (explain) {
+      explain.textContent = "Bản tóm tắt này được tạo cục bộ bằng JavaScript từ nội dung bạn nhập " +
+        "và các trường có sẵn trong dữ liệu mẫu. Hệ thống không dùng mô hình AI tạo sinh, " +
+        "không tự thêm chất liệu, kích thước hoặc phụ phí khi dữ liệu chưa có.";
+    }
+  }
+
+  function runSummary(doneMessage) {
+    if (description.value.trim() === "") {
+      note.textContent = "Vui lòng nhập mô tả yêu cầu trước khi tạo bản tóm tắt.";
+      note.hidden = false;
+      description.focus();
+      return;
+    }
     if (analyzing) {
       return;
     }
-    analyzing = true;
 
-    resultPanel.hidden = false; // khung kết quả xuất hiện cùng trạng thái chờ
+    analyzing = true;
+    resultPanel.hidden = false;
     setResultVisible(false);
     note.hidden = true;
-    status.hidden = false; // hiện "AI đang phân tích..."
+    status.hidden = false;
     submitBtn.disabled = true;
+
+    // Giữ nguyên độ trễ ngắn để người dùng thấy phản hồi, nhưng đây chỉ
+    // là xử lý cục bộ trong trình duyệt — không phải mô hình AI.
+    draft = updateCheckoutDraft({
+      brief: description.value,
+      qty: qty,
+      acceptedBrief: "",
+      artisanId: null
+    }) || draft;
 
     setTimeout(function () {
       analyzing = false;
       submitBtn.disabled = false;
       status.hidden = true;
-      setResultVisible(true); // hiện kết quả brief
+      buildSummary();
+      setResultVisible(true);
+      generated = true;
       showToast(doneMessage);
-    }, 1200);
+    }, 600);
   }
 
-  // Gửi form: kiểm tra còn trống thì nhắc, hợp lệ thì chạy mô phỏng
   form.addEventListener("submit", function (event) {
     event.preventDefault(); // chặn tải lại trang
-
-    if (description.value.trim() === "") {
-      note.hidden = false; // hiện dòng nhắc màu đỏ có sẵn trong HTML
-      description.focus();
-      return;
-    }
-
-    runAnalysis("AI đã tạo brief đề xuất cho bạn.");
+    runSummary("Đã tạo bản tóm tắt từ nội dung bạn nhập.");
   });
 
-  // "Chỉnh sửa": đưa con trỏ về ô mô tả để gõ lại
   if (editBtn) {
     editBtn.addEventListener("click", function () {
       description.focus();
     });
   }
 
-  // "Từ chối": ẩn cả khung kết quả (về trạng thái chưa có kết quả),
-  // người dùng có thể bấm "AI Brief Builder" để tạo lại
   if (rejectBtn) {
     rejectBtn.addEventListener("click", function () {
       resultPanel.hidden = true;
-      showToast("Đã từ chối brief đề xuất. Bạn có thể tạo lại bất cứ lúc nào.");
+      generated = false;
+      clearAcceptance();
+      showToast("Đã bỏ bản tóm tắt. Nội dung mô tả của bạn vẫn được giữ lại.");
     });
   }
 
-  // "Tạo lại": chạy mô phỏng phân tích thêm một lần nữa
   if (regenerateBtn) {
     regenerateBtn.addEventListener("click", function () {
-      runAnalysis("Đã tạo lại brief đề xuất (mô phỏng).");
+      runSummary("Đã tạo lại bản tóm tắt từ nội dung hiện tại.");
     });
   }
 
-  // "Lưu brief": lưu bản nháp vào trình duyệt — KHÔNG gửi đến máy chủ
   if (saveBtn) {
     saveBtn.addEventListener("click", function () {
-      writeJson(BRIEF_DRAFT_KEY, { description: description.value });
-      showToast("Đã lưu brief trên trình duyệt này (bản demo chưa gửi đến máy chủ).");
+      draft = updateCheckoutDraft({ brief: description.value }) || draft;
+      showToast("Đã lưu tạm trong tab này. Dữ liệu sẽ mất khi đóng tab.");
+    });
+  }
+
+  // Chấp nhận brief là điều kiện bắt buộc trước khi sang bước chọn nghệ nhân.
+  // Không tự chọn nghệ nhân và không gửi dữ liệu đi đâu.
+  if (acceptBtn) {
+    acceptBtn.addEventListener("click", function () {
+      if (description.value.trim() === "") {
+        note.textContent = "Vui lòng nhập mô tả yêu cầu trước khi chấp nhận.";
+        note.hidden = false;
+        description.focus();
+        return;
+      }
+      if (!generated) {
+        note.textContent = "Hãy tạo bản tóm tắt mới nhất trước khi chấp nhận brief.";
+        note.hidden = false;
+        return;
+      }
+
+      const accepted = updateCheckoutDraft({
+        brief: description.value.trim(),
+        qty: qty,
+        acceptedBrief: description.value.trim(),
+        artisanId: null,
+        checkoutStep: 1,
+        status: "editing"
+      });
+      if (!accepted) {
+        return;
+      }
+
+      window.location.href = "artisan-suggestions.html";
     });
   }
 }
@@ -1010,36 +1640,317 @@ function initOrderDetailsPage() {
 
 /* ---------- 14. Trang gợi ý nghệ nhân (artisan-suggestions.html) ---------- */
 
-// "Bỏ qua" một gợi ý sẽ ẩn thẻ nghệ nhân đó; "Tạo lại" hiện lại tất cả.
-// Đây là mô phỏng vì chưa có máy chủ AI thật để sinh gợi ý mới.
+// Trang gợi ý nghệ nhân: lọc hồ sơ có thật trong CRAFTLINK_ARTISANS theo
+// sản phẩm đang tùy biến và nội dung brief đã được chấp nhận. Đây là bộ lọc
+// tiêu chí cục bộ, không phải mô hình AI và không dùng phần trăm giả.
 function initArtisanSuggestionsPage() {
-  const list = document.querySelector(".artisan-list");
-  if (!list) {
+  const list = document.getElementById("artisan-list");
+  const template = document.getElementById("artisan-card-template");
+  const emptyState = document.getElementById("suggestions-empty");
+  if (!list || !template || !emptyState) {
     return; // trang này không phải trang gợi ý nghệ nhân
   }
 
-  const cards = Array.from(list.querySelectorAll(".artisan-suggestion-card"));
+  const context = document.getElementById("suggestion-context");
+  const productName = document.getElementById("suggestion-product-name");
+  const productMeta = document.getElementById("suggestion-product-meta");
+  const briefText = document.getElementById("suggestion-brief");
+  const backLink = document.getElementById("suggestion-back-link");
+  const summary = document.getElementById("suggestion-summary");
+  const resetBtn = document.getElementById("suggestion-reset-btn");
+  const emptyTitle = document.getElementById("suggestions-empty-title");
+  const emptyText = document.getElementById("suggestions-empty-text");
+  const emptyLink = document.getElementById("suggestions-empty-link");
 
-  // Ủy quyền sự kiện cho cả danh sách: nút có id bắt đầu bằng "skip-"
-  // hoặc "regenerate-" thì xử lý theo tiền tố đó.
+  const draft = readCheckoutDraft();
+  const product = draft ? findProduct(draft.productId) : null;
+  const hasAcceptedBrief = Boolean(draft && draft.brief.trim() !== "" &&
+    draft.acceptedBrief === draft.brief);
+
+  function showGuidance(title, text, linkLabel, linkHref) {
+    list.hidden = true;
+    if (context) {
+      context.hidden = true;
+    }
+    if (summary) {
+      summary.hidden = true;
+    }
+    if (resetBtn) {
+      resetBtn.hidden = true;
+    }
+    emptyState.hidden = false;
+    emptyTitle.textContent = title;
+    emptyText.textContent = text;
+    emptyLink.textContent = linkLabel;
+    emptyLink.href = linkHref;
+    emptyLink.hidden = false;
+  }
+
+  if (!draft || !product) {
+    showGuidance(
+      "Chưa có yêu cầu tùy biến",
+      "Hãy chọn một sản phẩm và tạo brief trước. Trang gợi ý chỉ hoạt động dựa trên brief đã chấp nhận.",
+      "Tạo brief tùy biến",
+      "customize.html"
+    );
+    return;
+  }
+
+  if (!hasAcceptedBrief) {
+    showGuidance(
+      "Brief chưa được chấp nhận",
+      "Hãy quay lại trang tạo brief, tạo bản tóm tắt mới nhất và bấm “Chấp nhận” trước khi chọn nghệ nhân.",
+      "Quay lại tạo brief",
+      "customize.html"
+    );
+    return;
+  }
+
+  // Hiển thị lại ngữ cảnh để người dùng không quên mình đang tùy biến gì.
+  if (context) {
+    context.hidden = false;
+    productName.textContent = product.name;
+    productMeta.textContent = (CATEGORY_LABELS[product.category] || "Chưa có thông tin danh mục") +
+      " • Số lượng " + draft.qty + " • Tạm tính " + formatPrice(product.price * draft.qty);
+    briefText.textContent = "Brief: " + draft.brief;
+    backLink.href = "customize.html";
+  }
+
+  // Tập từ nối/từ quá chung không dùng để so khớp, tránh gợi ý nhiễu.
+  const ignoredTokens = ["va", "cua", "cho", "voi", "cac", "nhung", "mot", "nhu", "the", "la", "co", "khong"];
+  const ignoredTags = ["thu cong", "tu nhien"];
+
+  function collectMatches() {
+    const productText = normalizeText([
+      product.name,
+      CATEGORY_LABELS[product.category] || "",
+      (product.styles || []).map(function (style) {
+        return STYLE_LABELS[style] || style;
+      }).join(" "),
+      product.note || ""
+    ].join(" "));
+    const briefHaystack = normalizeText(draft.brief);
+
+    const matches = [];
+
+    CRAFTLINK_ARTISANS.forEach(function (artisan) {
+      const reasons = [];
+      let score = 0;
+
+      if ((artisan.productIds || []).includes(product.id)) {
+        score += 50;
+        reasons.push("Có sản phẩm mẫu bạn đang tùy biến trong hồ sơ.");
+      }
+
+      const labels = [];
+      (artisan.specialties || []).concat(artisan.tags || []).forEach(function (label) {
+        const normalized = normalizeText(label);
+        if (!normalized || labels.includes(normalized) || ignoredTags.includes(normalized)) {
+          return;
+        }
+        labels.push(normalized);
+
+        if (briefHaystack.includes(normalized)) {
+          score += 8;
+          reasons.push("Brief của bạn có nhắc đến “" + label + "”.");
+          return;
+        }
+
+        if (productText.includes(normalized)) {
+          score += 5;
+          reasons.push("Sản phẩm có thông tin “" + label + "” trùng với thẻ/chuyên môn.");
+          return;
+        }
+
+        const matchingToken = normalized.split(" ").find(function (token) {
+          return token.length >= 3 && !ignoredTokens.includes(token) &&
+            briefHaystack.includes(token);
+        });
+        if (matchingToken) {
+          score += 3;
+          reasons.push("Từ khóa “" + matchingToken + "” trong brief trùng với thẻ/chuyên môn “" + label + "”.");
+        }
+      });
+
+      if (artisan.customOrderNote) {
+        score += 1;
+        reasons.push("Hồ sơ ghi nhận nhận đặt làm theo yêu cầu.");
+      }
+
+      if (reasons.length > 0) {
+        matches.push({ artisan: artisan, reasons: reasons, score: score });
+      }
+    });
+
+    matches.sort(function (a, b) {
+      return b.score - a.score || a.artisan.name.localeCompare(b.artisan.name, "vi");
+    });
+
+    return matches;
+  }
+
+  const matches = collectMatches();
+  if (matches.length === 0) {
+    showGuidance(
+      "Chưa tìm thấy nghệ nhân phù hợp",
+      "Dữ liệu mẫu chưa có hồ sơ trùng với sản phẩm hoặc nội dung brief hiện tại. Hãy quay lại chỉnh brief.",
+      "Quay lại tạo brief",
+      "customize.html"
+    );
+    return;
+  }
+
+  // Giao diện giữ tối đa 3 thẻ giống thiết kế cũ; nếu dữ liệu có nhiều hơn,
+  // phần tóm tắt ghi rõ số hồ sơ còn lại.
+  const displayedMatches = matches.slice(0, 3);
+  let skippedIds = [];
+
+  function fillCard(card, match) {
+    const artisan = match.artisan;
+
+    card.dataset.artisanId = artisan.id;
+
+    const photo = card.querySelector(".artisan-photo-img");
+    const initial = card.querySelector(".artisan-photo-initial");
+    if (artisan.image) {
+      photo.src = artisan.image;
+      photo.alt = "Nghệ nhân " + artisan.name;
+      photo.hidden = false;
+      initial.hidden = true;
+    } else {
+      photo.removeAttribute("src");
+      photo.hidden = true;
+      initial.textContent = artisan.name.charAt(0).toUpperCase();
+      initial.hidden = false;
+    }
+
+    card.querySelector(".artisan-name-lg").textContent = artisan.name;
+
+    const tagList = card.querySelector(".tag-list");
+    tagList.textContent = "";
+    const tags = [];
+    (artisan.tags || []).concat(artisan.specialties || []).forEach(function (tag) {
+      if (tag && !tags.includes(tag)) {
+        tags.push(tag);
+      }
+    });
+    if (tags.length === 0) {
+      tags.push("Chưa có thông tin");
+    }
+    tags.forEach(function (tag) {
+      const item = document.createElement("li");
+      item.className = "tag";
+      item.textContent = tag;
+      tagList.appendChild(item);
+    });
+
+    card.querySelector(".artisan-desc").textContent = artisan.description ||
+      "Chưa có thông tin mô tả nghệ nhân.";
+
+    const reasonList = card.querySelector(".artisan-reasons");
+    reasonList.textContent = "";
+    match.reasons.forEach(function (reason) {
+      const item = document.createElement("li");
+      item.textContent = reason;
+      reasonList.appendChild(item);
+    });
+
+    card.querySelector(".artisan-location-line").textContent =
+      "Địa điểm: " + (artisan.location || "Chưa có thông tin");
+    card.querySelector(".artisan-product-count-line").textContent =
+      "Sản phẩm mẫu trong dữ liệu: " + (artisan.productIds || []).length;
+    card.querySelector(".artisan-custom-line").textContent = artisan.customOrderNote
+      ? "Nhận đặt làm: " + artisan.customOrderNote
+      : "Nhận đặt làm: Chưa có thông tin";
+
+    const demoNote = card.querySelector(".artisan-demo-note");
+    if (artisan.demoNote) {
+      demoNote.textContent = "Lưu ý dữ liệu: " + artisan.demoNote;
+      demoNote.hidden = false;
+    } else {
+      demoNote.hidden = true;
+    }
+
+    const matchScore = card.querySelector(".match-score");
+    matchScore.title = "Số tiêu chí dữ liệu trùng khớp, không phải phần trăm hay xác suất của mô hình AI.";
+    card.querySelector(".match-tag").textContent = match.reasons.length;
+  }
+
+  function renderCards() {
+    list.textContent = "";
+
+    const visibleMatches = displayedMatches.filter(function (match) {
+      return !skippedIds.includes(match.artisan.id);
+    });
+
+    visibleMatches.forEach(function (match) {
+      const fragment = template.content.cloneNode(true);
+      const card = fragment.querySelector(".artisan-suggestion-card");
+      fillCard(card, match);
+      list.appendChild(fragment);
+    });
+
+    list.hidden = visibleMatches.length === 0;
+
+    if (visibleMatches.length === 0) {
+      emptyState.hidden = false;
+      emptyTitle.textContent = "Bạn đã bỏ qua tất cả gợi ý";
+      emptyText.textContent = "Bấm “Tạo lại gợi ý” để xem lại danh sách hồ sơ từ dữ liệu mẫu.";
+      emptyLink.hidden = true;
+    } else {
+      emptyState.hidden = true;
+    }
+
+    if (summary) {
+      summary.hidden = false;
+      summary.textContent = "Có " + matches.length + " hồ sơ có ít nhất một tiêu chí trùng khớp; " +
+        "đang hiển thị " + visibleMatches.length + " hồ sơ. Đây là bộ lọc dữ liệu mẫu, không phải xác suất AI.";
+    }
+  }
+
+  function resetSuggestions() {
+    skippedIds = [];
+    renderCards();
+    showToast("Đã hiện lại gợi ý từ dữ liệu mẫu; không có mô hình AI để tạo hồ sơ mới.");
+  }
+
+  if (resetBtn) {
+    resetBtn.hidden = false;
+    resetBtn.addEventListener("click", resetSuggestions);
+  }
+
+  // Một listener cho cả danh sách thay vì gắn riêng cho từng thẻ.
   list.addEventListener("click", function (event) {
     const button = event.target.closest("button");
     if (!button) {
       return;
     }
 
-    if (button.id.startsWith("skip-")) {
-      const card = button.closest(".artisan-suggestion-card");
-      const name = card.querySelector(".artisan-name-lg").textContent;
-      card.hidden = true;
-      showToast("Đã bỏ qua gợi ý từ " + name + ".");
-    } else if (button.id.startsWith("regenerate-")) {
-      cards.forEach(function (card) {
-        card.hidden = false;
+    const card = button.closest(".artisan-suggestion-card");
+    const artisan = findArtisanById(card.dataset.artisanId);
+    if (!artisan) {
+      return;
+    }
+
+    if (button.classList.contains("artisan-select-btn")) {
+      const updated = updateCheckoutDraft({
+        artisanId: artisan.id,
+        checkoutStep: 1,
+        status: "editing"
       });
-      showToast("Đã tạo lại danh sách gợi ý nghệ nhân (mô phỏng).");
+      if (updated) {
+        window.location.href = "checkout.html";
+      }
+    } else if (button.classList.contains("artisan-skip-btn")) {
+      skippedIds.push(artisan.id);
+      renderCards();
+      showToast("Đã bỏ qua gợi ý từ " + artisan.name + ".");
+    } else if (button.classList.contains("artisan-regenerate-btn")) {
+      resetSuggestions();
     }
   });
+
+  renderCards();
 }
 
 /* ---------- 15. Phản hồi trung thực cho các nút chưa có trong bản demo ---------- */
@@ -1080,6 +1991,7 @@ function initInactiveFeatures() {
 
 updateCartBadge();             // badge giỏ hàng trên header — chạy ở mọi trang
 initProductList();             // chỉ có tác dụng ở trang danh sách sản phẩm
+initProductLinks();            // gắn ?id cho các thẻ sản phẩm tĩnh ở index
 initProductDetail();           // chỉ có tác dụng ở trang chi tiết sản phẩm
 initCartPage();                // chỉ có tác dụng ở trang giỏ hàng
 initFavoriteButton();          // chỉ có tác dụng ở trang chi tiết sản phẩm

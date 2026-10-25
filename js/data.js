@@ -22,7 +22,28 @@ const CRAFTLINK_PRODUCTS = [
     leadTime: "4-7",
     rating: 4.9,
     reviewCount: 128,
-    note: ""
+    note: "",
+    // Các trường dưới đây lấy đúng nội dung đang có ở product-detail.html.
+    // Sản phẩm khác chưa có dữ liệu này nên giao diện sẽ ghi "Chưa có thông tin".
+    subtitle: "Mộc mạc, tinh tế và an toàn cho đồ uống nóng.",
+    description: "Làm thủ công từ gốm sứ cao cấp. Phù hợp cho cà phê, trà và quà tặng ý nghĩa.",
+    specs: [
+      { label: "Màu men", value: "Be – Nâu" },
+      { label: "Khắc tên", value: "Có" },
+      { label: "Đóng gói quà", value: "Có" }
+    ],
+    gallery: [
+      "assets/images/coc-gom-la-nau.png",
+      "assets/images/coc-gom-la-nau-2.png",
+      "assets/images/coc-gom-la-nau-3.png",
+      "assets/images/coc-gom-la-nau-4.png",
+      "assets/images/coc-gom-la-nau-5.png"
+    ],
+    reviews: [
+      { name: "Minh Anh", rating: 4, text: "Cốc đẹp, cầm chắc tay, men rất mịn." },
+      { name: "Quang Huy", rating: 4, text: "Đóng gói cẩn thận, giao hàng nhanh." },
+      { name: "Thảo Vy", rating: 5, text: "Màu sắc tự nhiên, đúng như mô tả." }
+    ]
   },
   {
     id: "bat-gom-men-lam",

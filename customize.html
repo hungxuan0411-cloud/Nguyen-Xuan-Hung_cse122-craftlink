@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tạo brief thiết kế cùng AI | CraftLink</title>
-  <meta name="description" content="Mô tả ý tưởng của bạn, để AI gợi ý brief thiết kế đầy đủ và tối ưu trước khi gửi tới nghệ nhân CraftLink.">
+  <title>Tạo brief tùy biến | CraftLink</title>
+  <meta name="description" content="Mô tả yêu cầu tùy biến và xem lại bản tóm tắt được tạo cục bộ trên trình duyệt trước khi chọn nghệ nhân CraftLink.">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/customize.css">
 </head>
@@ -49,20 +49,41 @@
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <ol>
         <li><a href="index.html">Trang chủ</a></li>
-        <li><span aria-current="page">Tạo brief thiết kế cùng AI</span></li>
+        <li><span aria-current="page">Tạo brief tùy biến</span></li>
       </ol>
     </nav>
 
     <section class="page-heading" aria-labelledby="page-title">
       <div>
-        <h1 id="page-title">Tạo brief thiết kế cùng AI</h1>
-        <p class="page-subtitle">Mô tả ý tưởng, để AI gợi ý brief đầy đủ và tối ưu cho bạn.</p>
+        <h1 id="page-title">Tạo brief tùy biến</h1>
+        <p class="page-subtitle">Mô tả ý tưởng của bạn. CraftLink sẽ tóm tắt yêu cầu từ chính nội dung bạn nhập và dữ liệu sản phẩm mẫu.</p>
       </div>
     </section>
 
     <div class="customize-layout">
 
       <section class="panel customize-input-panel" aria-label="Nhập yêu cầu tùy biến">
+
+        <div class="customize-product" id="customize-product">
+          <img id="customize-product-image" src="assets/images/coc-gom-la-nau.png" alt="Cốc gốm lá nâu thủ công">
+          <div class="customize-product-info">
+            <p class="customize-product-label">Sản phẩm đang tùy biến</p>
+            <p class="customize-product-name" id="customize-product-name">Cốc gốm lá nâu thủ công</p>
+            <p class="customize-product-meta" id="customize-product-meta">Linh Gốm • 240.000₫ / sản phẩm</p>
+            <a href="product-detail.html?id=coc-gom-la-nau" class="link-action" id="customize-back-link">Đổi sản phẩm</a>
+          </div>
+        </div>
+
+        <div class="field-group customize-qty-group">
+          <h2 class="panel-title">Số lượng</h2>
+          <div class="quantity-stepper">
+            <button type="button" class="qty-btn" id="customize-qty-decrease" aria-label="Giảm số lượng">−</button>
+            <span class="qty-value" id="customize-qty-value">1</span>
+            <button type="button" class="qty-btn" id="customize-qty-increase" aria-label="Tăng số lượng">+</button>
+          </div>
+          <p class="customize-qty-note" id="customize-qty-note">Bản demo giới hạn tối đa 99 sản phẩm mỗi dòng vì chưa có dữ liệu tồn kho.</p>
+        </div>
+
         <form id="brief-form">
 
           <div class="field-group">
@@ -79,40 +100,35 @@
               <label class="visually-hidden" for="reference-image">Ảnh tham khảo</label>
               <input type="file" id="reference-image" name="reference-image" accept="image/*">
             </div>
+            <p class="customize-qty-note">Ảnh chỉ được chọn trên thiết bị; bản demo không tải hoặc lưu ảnh lên máy chủ.</p>
           </div>
 
-          <button type="submit" class="btn-primary btn-large" id="ai-brief-btn">AI Brief Builder</button>
+          <button type="submit" class="btn-primary btn-large" id="ai-brief-btn">Tạo bản tóm tắt</button>
           <p class="form-note" id="brief-note">Vui lòng nhập mô tả yêu cầu trước khi tạo brief.</p>
+
+          <p class="local-note">
+            <strong>Cách hoạt động:</strong> Bản tóm tắt được tạo cục bộ bằng JavaScript từ nội dung bạn nhập
+            và dữ liệu sản phẩm mẫu. Trang <strong>chưa kết nối mô hình AI tạo sinh</strong> và không gửi dữ liệu ra ngoài.
+          </p>
 
         </form>
       </section>
 
-      <section class="panel customize-result-panel" aria-label="Kết quả brief đề xuất bởi AI">
+      <section class="panel customize-result-panel" aria-label="Bản tóm tắt yêu cầu tùy biến" hidden>
 
         <p class="ai-status" id="ai-status">
           <span class="spinner" aria-hidden="true"></span>
-          AI đang phân tích yêu cầu, vui lòng chờ trong giây lát...
+          Đang tạo bản tóm tắt cục bộ từ nội dung bạn nhập...
         </p>
 
-        <h2 class="panel-title">Kết quả brief đề xuất bởi AI</h2>
-        <dl class="info-list brief-result" id="brief-result">
-          <dt>Mục tiêu</dt>
-          <dd>Tạo bộ cốc gốm men lá nâu, phù hợp sử dụng hàng ngày và làm quà tặng.</dd>
-          <dt>Chất liệu</dt>
-          <dd>Gốm sứ cao cấp, men mờ an toàn cho đồ uống nóng.</dd>
-          <dt>Kích thước</dt>
-          <dd>Đường kính 8 – 9 cm, cao 9 – 10 cm, dung tích ~300ml.</dd>
-          <dt>Phong cách</dt>
-          <dd>Tối giản, mộc mạc, họa tiết lá nâu — tông màu tự nhiên.</dd>
-          <dt>Ngân sách dự kiến</dt>
-          <dd class="brief-budget">220.000 – 260.000 ₫ / sản phẩm</dd>
-        </dl>
+        <h2 class="panel-title">Bản tóm tắt yêu cầu tùy biến</h2>
+        <dl class="info-list brief-result" id="brief-result"></dl>
 
-        <h2 class="brief-section-title">Vì sao AI đề xuất như vậy?</h2>
-        <p class="ai-explain">Dựa trên mô tả của bạn, AI tối ưu chất liệu an toàn, kích thước tiện dụng, phong cách phù hợp xu hướng quà tặng và ngân sách phổ biến hiện nay.</p>
+        <h2 class="brief-section-title">Căn cứ tạo bản tóm tắt</h2>
+        <p class="ai-explain"></p>
 
         <div class="btn-row brief-actions">
-          <a href="artisan-suggestions.html" class="btn-success" id="accept-brief-btn">Chấp nhận</a>
+          <button type="button" class="btn-success" id="accept-brief-btn">Chấp nhận</button>
           <button type="button" class="btn-outline" id="edit-brief-btn">Sửa</button>
           <button type="button" class="btn-outline" id="reject-brief-btn">Từ chối</button>
           <button type="button" class="btn-outline" id="regenerate-brief-btn">Tạo lại</button>

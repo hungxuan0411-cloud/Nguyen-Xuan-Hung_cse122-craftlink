@@ -5,6 +5,7 @@
 >
 > - Bảng kiểm kê màn hình: [`docs/screen-inventory.md`](docs/screen-inventory.md)
 > - Bản gốc User Flow: [`docs/user-flow.md`](docs/user-flow.md)
+> - Bảng công việc: [`docs/task-board.md`](docs/task-board.md)
 >
 > Nội dung User Flow dưới đây được tổng hợp từ `docs/user-flow.md`.
 

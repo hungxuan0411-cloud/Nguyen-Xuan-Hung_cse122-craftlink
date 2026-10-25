@@ -42,7 +42,7 @@ Cho phép người mua xem danh sách sản phẩm thủ công, tùy biến yêu
 - Luồng người mua qua 8 trang: xem sản phẩm → tạo brief tùy biến → chọn nghệ nhân → đặt hàng → theo dõi đơn.
 
 ## Thiết kế Canva
-https://www.canva.com/design/DAHWyBVvS6U/eyYrsvv49jN-26FeiXk-Aw/edit
+https://www.canva.com/design/DAHZAR9VxmU/dQQiBQ9-OPRH6Q5x8DdAkw/edit
 
 ## GitHub
 https://github.com/hungxuan0411-cloud/Nguyen-Xuan-H-ung_CSE122_craftlink-presentation

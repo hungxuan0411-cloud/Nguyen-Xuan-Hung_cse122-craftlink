@@ -55,6 +55,19 @@ Cho phép người mua xem danh sách sản phẩm thủ công, tùy biến yêu
 - **Chi tiết đơn:** xem thông tin đơn và gửi yêu cầu chỉnh sửa, lưu nháp bằng localStorage.
 - Luồng người mua qua 9 trang: xem sản phẩm → tạo brief tùy biến → chọn nghệ nhân → xác nhận đơn → theo dõi đơn; hoặc mua trực tiếp: chi tiết sản phẩm → giỏ hàng → xác nhận đơn → đơn hàng.
 
+## Tài liệu minh chứng
+
+Các tài liệu dưới đây nằm trên nhánh `docs/sv1-evidence`; mã nguồn 9 trang nằm trên `main`.
+
+| Tài liệu | Nội dung |
+|---|---|
+| [`docs/sv1-assignment.md`](docs/sv1-assignment.md) | Phân công SV1: 9 màn hình, CRUD/trạng thái, AI cục bộ, checklist, nhánh `feature/sv1-buyer`, PR #3 |
+| [`docs/task-board.md`](docs/task-board.md) | 6 thẻ TASK-01…TASK-06 và trạng thái thật của board |
+| [`docs/ai-usage-report.md`](docs/ai-usage-report.md) | Khai báo AI trung thực, prompt thật, bản dán vào mục 3.1 của báo cáo nhóm |
+| [`docs/screen-inventory.md`](docs/screen-inventory.md) | Kiểm kê 9 màn hình, 11 cột, Task ID và nhánh thực tế |
+| [`docs/user-flow.md`](docs/user-flow.md) | Sitemap và 4 luồng chính của người mua |
+| [`videos/README.md`](videos/README.md) | 6 video OBS bắt buộc, 8 bước quay, trạng thái 0/6 |
+
 ## Thiết kế Canva
 https://www.canva.com/design/DAHZAR9VxmU/dQQiBQ9-OPRH6Q5x8DdAkw/edit
 

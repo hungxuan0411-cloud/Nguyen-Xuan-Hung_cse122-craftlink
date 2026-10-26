@@ -141,3 +141,17 @@ Bảng dưới đây bám theo sáu màn hình khách hàng trong `docs/screen-i
 
 **Hỏi: `artisan-suggestions.html` có phải AI không?**
 > "Dạ không. Trang đó là bộ lọc tiêu chí cục bộ. Chính câu chữ trong trang ghi 'chưa kết nối mô hình AI tạo sinh', và điểm trên thẻ là số tiêu chí khớp, không phải xác suất AI. Em không khai trang này là AI."
+
+## 8. Bản dán vào mục 3.1 — báo cáo nhóm
+
+Thay bảng **“3.1 SV1 — Khách hàng”** trong `docs/ai-usage-report.md` của repo nhóm bằng bảng dưới, rồi xóa câu “Hai mục dưới đây vẫn đang trống” ở đầu mục 3.
+
+| Hạng mục | Nội dung SV1 khai | Dữ kiện kiểm chứng trong repo | Trạng thái |
+|---|---|---|---|
+| Công cụ AI đã dùng khi làm bài | **Qoder** — viết/sửa mã, soạn tài liệu, thao tác Git theo yêu cầu. **ChatGPT** và **Claude** — sinh viên tự khai có dùng thêm; phạm vi chi tiết chưa có nhật ký. Phiên bản công cụ: **[CẦN XÁC MINH]**. | Commit/PR trong repo cá nhân và repo nhóm; không có nhật ký prompt đầy đủ trong repo | **đã khai một phần** — còn phiên bản và phạm vi ChatGPT/Claude |
+| Prompt tiêu biểu | (1) 2026-10-11: “Nhiệm vụ của tôi là xây dựng giao diện trang dành cho NGƯỜI MUA bằng HTML, CSS và JavaScript thuần. … Không yêu cầu backend, database, framework hoặc API phức tạp.” (2) 2026-10-15: “bạn hãy tạo lại link favorites cho tôi tại link cũ khi tôi bấm hủy hết phần yêu thích thì nó mất hết ản phẩm” [sic]. (3) 2026-10-24: “Tôi muốn bổ sung một tính năng AI giúp người dùng mô tả nhu cầu của mình, sau đó nhận được tư vấn và gợi ý sản phẩm hoặc thợ thủ công phù hợp. **Yêu cầu quan trọng nhất:** Chỉ bổ sung tính năng AI vào giao diện hiện có. Không thiết kế lại website, không thay đổi bố cục hiện tại và không tự ý sửa các chức năng đang hoạt động.” | Nhật ký phiên làm việc Qoder trên máy sinh viên; **không nằm trong repository** | **đã khai** — người chấm không mở lại được toàn bộ log |
+| Phần AI sinh trong mã | `js/ai-advisor.js` (toàn bộ trợ lý tìm kiếm cục bộ); phần `buildSummary` / `runSummary` trong `js/main.js` (bản tóm tắt brief); phần lớn JavaScript còn lại và các tài liệu `docs/` do AI soạn, SV1 đọc lại và sửa. HTML/CSS do SV1 viết, có tham khảo AI. | `js/ai-advisor.js`; `js/main.js:1495`, `:1531`; `docs/` | **đã khai** — tỷ lệ phần trăm chính xác **[CẦN XÁC MINH]** |
+| AI sai ở đâu, sửa thế nào | **Lỗi trạng thái rỗng trang yêu thích:** bỏ hết sản phẩm yêu thích thì lưới bị ẩn nhưng khối “Chưa có sản phẩm yêu thích” không hiện. Sửa bằng `#favorites-empty` trong `favorites.html:90-93` và tính `isEmpty` trong `js/main.js:1282-1284` để ẩn lưới, hiện khối rỗng. | Prompt báo lỗi 2026-10-15; mã sửa đã đọc trực tiếp | **đã khai** — việc lỗi do AI sinh là suy luận từ phạm vi, không có log từng dòng |
+| Chế độ AI trong sản phẩm | **Bộ quy tắc cục bộ, không gọi mô hình.** CraftLink AI và bản tóm tắt brief đều chạy bằng luật JavaScript. `artisan-suggestions.html` không phải AI. Không có API key, không có `fetch` ra ngoài. | `js/ai-advisor.js` dòng 4-5 ghi “KHÔNG phải AI tạo sinh và KHÔNG gọi API bên ngoài”; `artisan-suggestions.html:61` ghi “chưa kết nối mô hình AI tạo sinh” | **đã khai** |
+
+> Sau khi dán, đổi các ô **“chưa khai”** trong mục 3.1 thành **“đã khai”** và cập nhật lại câu mở đầu mục 3. Không khai AI Personalization, AI Visual Matcher hoặc AI Proposal Evaluator vì repo không có mã tương ứng.

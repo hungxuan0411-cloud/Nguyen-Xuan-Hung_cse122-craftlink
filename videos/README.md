@@ -17,13 +17,26 @@
 
 **Không được điền link YouTube/Drive không tồn tại, không ghi thời lượng ước lượng, không đánh dấu "đã quay" khi chưa có tệp.**
 
+### 1.1. Ba link SV1 đã cung cấp — chưa khớp được màn hình
+
+Nguồn: tệp `video` trên nhánh `feature/sv1-buyer` của repo nhóm, ngày 2026-10-26. Đây là link do sinh viên cung cấp, không phải link tự tạo. **Chưa điền vào bảng mục 1** vì chưa xác nhận được link nào ứng với màn hình nào.
+
+| STT SV1 ghi | Link | Khả năng ánh xạ | Việc cần làm |
+|---|---|---|---|
+| 4 | <https://www.youtube.com/watch?v=AW-wuwhA3zc&t=4s> | Có thể là màn 4 — `artisan-suggestions.html` ("Chọn nghệ nhân") | Mở video, đối chiếu tiêu đề và nội dung |
+| 7 | <https://www.youtube.com/watch?v=T6ejhOOqfgk> | STT 7 trong bảng 18 dòng là **SV2**; nếu là STT nội bộ 9 trang Buyer thì có thể là `checkout.html` | Xác nhận đây là video của SV1, không phải SV2 |
+| 9 | <https://www.youtube.com/watch?v=PaCFXYhuo9U> | STT 9 trong bảng 18 dòng là **SV2**; nếu là STT nội bộ 9 trang Buyer thì có thể là `order-details.html` | Xác nhận đây là video của SV1, không phải SV2 |
+
+> **Rủi ro:** nếu STT 7 và 9 là dòng kiểm kê của SV2, dùng hai link này cho SV1 sẽ sai minh chứng. Chỉ điền sau khi mở video và xác nhận đúng người quay, đúng màn hình, đúng tên tệp.
+
+
 ## 2. Ghi chú mapping — cần chốt với nhóm
 
 1. **Tên màn hình trong team inventory không khớp hoàn toàn với tệp thực tế.** Ví dụ nhóm ghi `custom-order-brief.html`, `proposal-comparison.html`, `checkout-confirmation.html`, `customer-dashboard.html`; repo cá nhân dùng `customize.html`, `artisan-suggestions.html`, `checkout.html`, `orders.html`. Đây là điểm cần chốt trước khi quay — **[CẦN CHỐT VỚI NHÓM]**.
 2. **Màn hình 4 không phải trang so sánh proposal.** `artisan-suggestions.html` là trang gợi ý nghệ nhân, không có báo giá/proposal để so sánh. Nếu nhóm yêu cầu đúng màn hình "proposal comparison", cần bổ sung trang hoặc đổi tên màn hình trong inventory. Không được quay trang gợi ý nghệ nhân rồi gọi là "so sánh proposal".
 3. **Màn hình 6 chưa có cập nhật hồ sơ cá nhân.** Repo có danh sách đơn và chi tiết đơn/nháp yêu cầu chỉnh sửa, nhưng không có form cập nhật hồ sơ. Nếu nhóm giữ mô tả "R/U/D hồ sơ", cần bổ sung hoặc sửa inventory.
 4. **Repo cá nhân có 9 màn hình, không phải 6.** Ngoài 6 màn hình trên còn `cart.html`, `favorites.html`, `order-details.html` (và `forgot password.html` chỉ nằm ở nhánh riêng). Barem 8.1 yêu cầu 1 video cho **mỗi màn hình độc lập**; nếu tính đủ 9, cần thêm video. Con số 6 lấy theo phản hồi ngày 2026-10-26 và sáu dòng SV1 trong team inventory — **[CẦN CHỐT VỚI NHÓM]**.
-5. **Team `videos/README.md` hiện ghi "mỗi sinh viên 3 video"** và chỉ có 3 link của SV3 (trạng thái tại nhánh PR #1 ngày 2026-10-26). Phản hồi yêu cầu SV1 đủ 6 video. Hai nguồn chưa khớp — **[CẦN CHỐT VỚI NHÓM]**.
+5. **Team `videos/README.md` đang mâu thuẫn với phản hồi chấm.** Tệp ghi "Đã chốt: 3 video/người" và chỉ có 3 link của SV3, nhưng phản hồi ngày 2026-10-26 yêu cầu SV1 đủ **6 video**. Ngoài ra, 3 link SV1 đã cung cấp (mục 1.1) chưa được đưa vào bảng chính thức vì chưa khớp số dòng. Cần chốt với nhóm và giảng viên — **[CẦN CHỐT VỚI NHÓM]**. Nếu giảng viên xác nhận 6 video là bắt buộc, phải quay đủ 6 và bỏ câu "3 video/người" khỏi tài liệu nhóm.
 6. **Tên file HTML chưa theo chuẩn `role-function-action.html`.** Nếu nhóm quyết định đổi tên file, phải đổi trước khi quay để video khớp mã; không đổi riêng lẻ. Đây là việc của cả nhóm — **[CẦN CHỐT VỚI NHÓM]**.
 
 ## 3. Tám bước bắt buộc trong mỗi video
